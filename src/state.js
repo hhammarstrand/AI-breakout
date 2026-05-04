@@ -1,6 +1,6 @@
 // Game state: persisted in localStorage. Tracks score, progress, inventory.
 
-const KEY = "blackout.v1";
+const KEY = "blackout.v2";
 const TOTAL_LEVELS = 4;
 
 const initial = () => ({
