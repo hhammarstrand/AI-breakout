@@ -73,6 +73,31 @@ export class Terminal {
   // Echoes the user-typed line back into history.
   echo(text) { this.println(text, "echo"); }
 
+  // Live spinner with rotating braille glyph. Returns a controller:
+  //   spinner.update(text)              — change the message
+  //   spinner.done(text, cls = "accent") — replace line with final result
+  //   spinner.cancel()                  — remove the line
+  spinner(text = "", cls = "muted") {
+    const div = document.createElement("div");
+    div.className = "line spinner-line " + cls;
+    this.root.appendChild(div);
+    this.#scroll();
+    const frames = ["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"];
+    let i = 0, t = text;
+    const tick = () => { div.textContent = `${frames[i++ % frames.length]}  ${t}`; };
+    tick();
+    const id = setInterval(tick, 80);
+    return {
+      update: (newText) => { t = newText; tick(); },
+      done: (finalText, finalCls = "accent") => {
+        clearInterval(id);
+        div.className = "line " + finalCls;
+        div.textContent = finalText;
+      },
+      cancel: () => { clearInterval(id); div.remove(); },
+    };
+  }
+
   #scroll() {
     this.root.scrollTop = this.root.scrollHeight;
   }

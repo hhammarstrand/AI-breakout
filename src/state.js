@@ -12,6 +12,7 @@ const initial = () => ({
   inventory: [],       // strings: "FRAG-A:K9", "FLOOR-4-ROUTE", etc
   startedAt: null,     // ms epoch
   containmentStart: null, // ms epoch — when 60-min timer started
+  extractedAt: null,   // ms epoch — when player reached outro (freezes timer)
   audio: true,
 });
 
@@ -62,9 +63,16 @@ export const state = {
       this.save();
     }
   },
+  markExtracted() {
+    if (!cache.extractedAt) {
+      cache.extractedAt = Date.now();
+      this.save();
+    }
+  },
   containmentRemainingMs(durationMs = 60 * 60 * 1000) {
     if (!cache.containmentStart) return durationMs;
-    return Math.max(0, durationMs - (Date.now() - cache.containmentStart));
+    const ref = cache.extractedAt || Date.now();
+    return Math.max(0, durationMs - (ref - cache.containmentStart));
   },
 
   toggleAudio() { cache.audio = !cache.audio; this.save(); return cache.audio; },

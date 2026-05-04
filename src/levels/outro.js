@@ -15,6 +15,7 @@ const ART = String.raw`
 export const outro = {
   async start(ctx) {
     const { term, state, sfx } = ctx;
+    state.markExtracted();
     ops.setMode("outro");
     ops.updateSurvivor({ bpm: 88, tag: "stable", location: "MED-EVAC INBOUND" });
     ops.updateDrone({ state: "clear of structure", pos: "EXIT", batt: 64 });
@@ -29,7 +30,8 @@ export const outro = {
     term.printBlock(ART, "ascii");
 
     const s = state.get();
-    const totalSec = Math.ceil((Date.now() - (s.containmentStart || Date.now())) / 1000);
+    const endRef = s.extractedAt || Date.now();
+    const totalSec = Math.ceil((endRef - (s.containmentStart || endRef)) / 1000);
     const m = Math.floor(totalSec / 60);
     const ss = (totalSec % 60).toString().padStart(2, "0");
 
