@@ -1,19 +1,16 @@
 // Level 4: The Breach.
 // Players must combine fragments from L1-L3 plus a morse-encoded clue to
-// form the containment auth code.
+// form the containment auth code. All values come from the seeded mission.
 
 import { playMorse } from "../audio.js";
 import { ops } from "../opspanel.js";
+import { getMission } from "../seed.js";
 
-// "K9" in international morse, words separated by /
-const MORSE_SEQ = "-.- ----.";
-const MORSE_PLAINTEXT = "K9";
-
-// Final auth code: AEGIS-K9-12
-//   AEGIS = L2 codename
-//   K9    = morse from intercepted radio (this level)
-//   12    = L1 room number
-const AUTH = "AEGIS-K9-12";
+const M = getMission();
+const MORSE_SEQ = M.morseSeq;
+const MORSE_PLAINTEXT = M.strain;
+// AUTH = <codename>-<strain>-<room number>, all from mission
+const AUTH = M.auth;
 
 let played = 0;
 

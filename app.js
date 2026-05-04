@@ -8,6 +8,7 @@ import { nextHint, registerHints, hintCount } from "./src/hints.js";
 import { registerPrompts, getPrompts } from "./src/prompts.js";
 import { ops } from "./src/opspanel.js";
 import { atmosphere } from "./src/atmosphere.js";
+import { getMission } from "./src/seed.js";
 
 import { intro }   from "./src/levels/intro.js";
 import { level1 }  from "./src/levels/level1_survivor.js";
@@ -283,8 +284,10 @@ function showStatus() {
   const elapsed = elapsedString();
   const team = s.teamName || "(unnamed)";
   const lvl = s.level >= 5 ? "EXTRACTED" : `L${s.level || 0}`;
+  const m = getMission();
   term.printBlock(
 `team      : ${team}
+seed      : ${m.seed}
 mission   : OPERATION LIFELINE
 status    : ${s.completed.length === 4 ? "EXTRACTED" : "ACTIVE — " + lvl}
 progress  : ${s.completed.length}/${state.totalLevels} levels

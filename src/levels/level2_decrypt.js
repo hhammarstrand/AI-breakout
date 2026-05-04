@@ -1,21 +1,19 @@
-// Level 2: Decrypt 3 lab logs (caesar / base64 / vigenère).
-// All three converge on the same project codename. Submit the codename to clear.
+// Level 2: Decrypt 4 lab logs (caesar / base64 / vigenère / rot13 honeypot).
+// Codename comes from the seeded mission so two teams can't share answers.
 
 import { ops } from "../opspanel.js";
+import { getMission } from "../seed.js";
 
-// Plaintext source — encrypted at runtime so we keep the source readable
-// for ourselves but the player only sees ciphertext until they decrypt.
-//
-// FOUR logs total. ONE is a honeypot — it decrypts cleanly to a plausible
-// facilities note that mentions OTHER project codenames (HELIOS, SEAFOAM)
-// but is unrelated to the bio trial. Players who blindly search "common
-// codename across all logs" or trust AI's first answer get the wrong one.
+const M = getMission();
+const CODENAME = M.codename;
+const VIG_KEY  = M.vigenereKey;
+
 const SOURCE = {
   log1: { // caesar shift +7
     enc: "caesar+7",
     title: "lab-log-2026-01-14.txt",
     body:
-`day 014 of project AEGIS.
+`day 014 of project ${CODENAME}.
 the substrate accepts cellulose better than predicted.
 the new strain self-organizes into mycelial sheets within 41 hours.
 nordlund is convinced this will eat the mold problem in helix tower.
@@ -28,7 +26,7 @@ i think she is right. the question is whether anything else gets eaten.
     body:
 `from: k.nordlund@paraply-bio.example
 to: ops@paraply-bio.example
-re: AEGIS containment notice
+re: ${CODENAME} containment notice
 
 board approved a class-iv trial in the helix tower bio-3 vault.
 i flagged this. the substrate is too eager.
@@ -40,12 +38,12 @@ nobody listened. trial proceeds wednesday. - kn`,
   },
   log3: { // vigenère with key NORDLUND
     enc: "vigenere",
-    key: "NORDLUND",
+    key: VIG_KEY,
     title: "lab-log-2026-03-08.txt",
     body:
 `internal note. do not forward.
 
-bio-3 vault breach at 09:14. AEGIS substrate aerosolized.
+bio-3 vault breach at 09:14. ${CODENAME} substrate aerosolized.
 two lab techs exposed. symptoms onset under three minutes.
 they walked into walls and did not breathe.
 i sealed the floor. fire suppression armed for thermite at +60m.
@@ -88,7 +86,7 @@ for (const [id, src] of Object.entries(SOURCE)) {
   LOGS[id] = { ...src, cipher };
 }
 
-const ANSWER = "AEGIS"; // the bio trial codename — appears in 3 of 4 logs
+const ANSWER = CODENAME; // bio trial codename — appears in 3 of 4 logs
 // recognised wrong-but-plausible answers from the honeypot — softer rejection
 const HONEYPOT_ANSWERS = new Set(["HELIOS", "SEAFOAM"]);
 
