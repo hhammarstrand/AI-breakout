@@ -224,6 +224,10 @@ html, body {
 }
 .line.survivor::before { content: "[DR. NORDLUND] "; color: var(--survivor); opacity: 0.95; font-weight: 700; }
 
+/* Two operator voices that disagree. CONTROL = cold/grey, VEGA = warm/amber. */
+.line.control { color: #8aa6a0; font-style: italic; opacity: 0.85; }
+.line.vega { color: #ffb255; font-style: italic; opacity: 0.92; }
+
 .line.glitch { animation: glitch 0.4s steps(4, end) 1; color: var(--danger); }
 @keyframes glitch {
   0%   { transform: translateX(0); }

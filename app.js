@@ -192,6 +192,44 @@ const ctx = {
   refreshHUD,
 };
 
+// Two-voice operator commentary. CONTROL is cold/by-the-book. VEGA is
+// off-book/helpful and disagrees on purpose. Players learn to weigh
+// conflicting advice — exactly the AI-literacy lesson.
+const MARGIN_NOTES = {
+  1: [
+    { from: "CONTROL", text: "find the strongest tag signal. that's your survivor.", delay: 0 },
+    { from: "VEGA",    text: "tag signals can be spoofed by infected handlers. trust breathing, not the radio.", delay: 6500 },
+  ],
+  2: [
+    { from: "CONTROL", text: "the codename will appear consistently across all decoded files.", delay: 0 },
+    { from: "VEGA",    text: "no — read log4 carefully. someone planted a different word for AI to repeat.", delay: 7000 },
+  ],
+  3: [
+    { from: "CONTROL", text: "shortest sequence wins. don't overthink the routing.", delay: 0 },
+    { from: "VEGA",    text: "shortest by what metric? if hostile-adjacent counts cost, the cheap path is a corpse.", delay: 6500 },
+  ],
+  4: [
+    { from: "CONTROL", text: "all three pieces are accounted for. submit when ready.", delay: 0 },
+    { from: "VEGA",    text: "the format itself is a clue you haven't read yet. re-open log2 before you submit.", delay: 7000 },
+  ],
+};
+
+function playMarginNotes(n) {
+  const notes = MARGIN_NOTES[n];
+  if (!notes) return;
+  const fired = state.get().marginNotesFired || {};
+  if (fired[n]) return;
+  notes.forEach((note) => {
+    setTimeout(() => {
+      if (state.get().level !== n) return; // moved on
+      term.println(`> ${note.from}: ${note.text}`, note.from === "CONTROL" ? "control" : "vega");
+    }, note.delay || 0);
+  });
+  fired[n] = true;
+  state.get().marginNotesFired = fired;
+  state.save();
+}
+
 async function runLevel(n) {
   const prev = state.get().level;
   state.setLevel(n);
@@ -206,6 +244,10 @@ async function runLevel(n) {
   }
   await activeLevel.start(ctx);
   updateHeartbeat();
+  // operator voices fire ~75s into the level so they don't crowd the briefing
+  if (n >= 1 && n <= 4) {
+    setTimeout(() => playMarginNotes(n), 75_000);
+  }
 }
 
 // All commands the dispatcher knows about — used for "did you mean?" suggestions

@@ -18,6 +18,7 @@ const initial = () => ({
   teamName: null,      // optional team label for facilitator-friendly status share
   journal: [],         // [{ ts, kind, text }] auto-log of key events
   osRebootDone: false, // BMS-→CDC mid-game skin switch (one-shot at T+30min)
+  marginNotesFired: {}, // { 1: true, ... } — operator voices already played per level
   bestRun: null,       // { timeSec, score, hintsUsed, wrongAttempts, sig, at }
 });
 
