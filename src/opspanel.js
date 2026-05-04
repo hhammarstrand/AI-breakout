@@ -32,7 +32,7 @@ let panelEl = null;
 let floorSvg = null;
 let droneEl = null;
 let mode = "idle";
-let dronePos = "4-12";
+let dronePos = null; // null = drone marker hidden on floor plan
 let droneState = { state: "idle", batt: 100 };
 let survivor = { bpm: 0, tag: "searching", visible: false };
 
