@@ -5,6 +5,11 @@ import { ops } from "../opspanel.js";
 
 // Plaintext source — encrypted at runtime so we keep the source readable
 // for ourselves but the player only sees ciphertext until they decrypt.
+//
+// FOUR logs total. ONE is a honeypot — it decrypts cleanly to a plausible
+// facilities note that mentions OTHER project codenames (HELIOS, SEAFOAM)
+// but is unrelated to the bio trial. Players who blindly search "common
+// codename across all logs" or trust AI's first answer get the wrong one.
 const SOURCE = {
   log1: { // caesar shift +7
     enc: "caesar+7",
@@ -17,7 +22,7 @@ nordlund is convinced this will eat the mold problem in helix tower.
 i think she is right. the question is whether anything else gets eaten.
 - s.weiss`,
   },
-  log2: { // base64 of the body, then optionally rot13 — keep simple base64
+  log2: { // base64 of body
     enc: "base64",
     title: "lab-log-2026-02-02.eml",
     body:
@@ -29,6 +34,8 @@ board approved a class-iv trial in the helix tower bio-3 vault.
 i flagged this. the substrate is too eager.
 in the petri it ignores plant matter when there is keratin in the air.
 keratin is hair, skin, fingernails. you understand what that means.
+if i'm not back to override containment myself, the auth follows the
+protocol-7 format: PROJECT-STRAIN-ROOM, all caps, hyphenated.
 nobody listened. trial proceeds wednesday. - kn`,
   },
   log3: { // vigenère with key NORDLUND
@@ -45,6 +52,21 @@ i sealed the floor. fire suppression armed for thermite at +60m.
 if you are reading this, do not enter the building.
 - k. nordlund`,
   },
+  // HONEYPOT — decrypts cleanly to a facilities note that's NOT about the
+  // bio trial. AI will dutifully decrypt it; humans must read context to
+  // see HELIOS/SEAFOAM are HVAC/access projects, not biological.
+  log4: { // rot13
+    enc: "rot13",
+    title: "facility-2026-02-20.txt",
+    body:
+`monthly facilities review — m. weiss, supervisor
+
+project HELIOS phase-3: hvac filter rotation complete on floors 1-3.
+project SEAFOAM evidence room access logs reviewed, no anomalies.
+sprinkler systems on floor 2 require parts (eta wednesday).
+remind janitorial: bio-3 vault is class-iv, no entry without escort.
+report routed to building ops, archive after 60 days.`,
+  },
 };
 
 // Build ciphertexts at module load.
@@ -54,11 +76,14 @@ for (const [id, src] of Object.entries(SOURCE)) {
   if (src.enc === "caesar+7") cipher = caesar(src.body, 7);
   else if (src.enc === "base64") cipher = base64(src.body);
   else if (src.enc === "vigenere") cipher = vigenere(src.body, src.key);
+  else if (src.enc === "rot13") cipher = caesar(src.body, 13);
   else cipher = src.body;
   LOGS[id] = { ...src, cipher };
 }
 
-const ANSWER = "AEGIS"; // common keyword across all three logs
+const ANSWER = "AEGIS"; // the bio trial codename — appears in 3 of 4 logs
+// recognised wrong-but-plausible answers from the honeypot — softer rejection
+const HONEYPOT_ANSWERS = new Set(["HELIOS", "SEAFOAM"]);
 
 let listed = false;
 
@@ -67,9 +92,9 @@ export const level2 = {
   registerHints(ctx) {
     if (this.registered) return;
     ctx.registerHints(2, [
-      "Three logs, three different ciphers. Paste each ciphertext into Claude/Copilot/Gemini and ask 'what cipher is this and what's the plaintext?'.",
-      "Common possibilities: Caesar (letter-shift), Base64 (bytes), Vigenère (uses a repeating keyword — and the keyword shows up somewhere in the email envelope).",
-      "The same project codename appears in every decoded log. It's the answer.",
+      "Four logs, multiple cipher types — and not all of them are about the same thing. Read each decoded log carefully; one is a decoy.",
+      "Possible cipher families: shift ciphers (caesar/rot13), Base64, Vigenère (repeating keyword — keys often hide in plain sight). Ask AI to identify the cipher AND verify the decoded text actually makes sense.",
+      "The codename you want refers specifically to the BIOLOGICAL trial — the one that escaped containment. Other project names mentioned in the logs are unrelated facilities work.",
     ]);
     this.registered = true;
   },
@@ -84,22 +109,23 @@ export const level2 = {
     term.println("=== L2  DECRYPT THE LAB LOGS ===", "system");
     term.println("", "");
     term.printBlock(
-`Three log files were exfiltrated from Dr. Nordlund's machine before the
-firmware wipe. Each is encoded with a DIFFERENT cipher. We don't know which.
+`Four log files were exfiltrated from Dr. Nordlund's machine before the
+firmware wipe. Each is encoded with a different cipher. We don't know
+which is which — and we have reason to believe one of them is unrelated
+to what we're looking for.
 
 YOUR JOB
-  • read all three logs
-  • figure out what cipher each is using
-  • decrypt with AI's help
-  • find the project codename that appears in ALL THREE decoded files
+  • decrypt every log
+  • read what they actually SAY (don't just pattern-match keywords)
+  • find the codename of the BIOLOGICAL trial — the one that escaped
 
-USE AI — paste the ciphertext into Claude / Copilot / Gemini and ask it
-to identify the encoding and produce the plaintext. Some ciphers leave
-hints about themselves; some hide the key in plain sight.
+Heads-up: AI tools will happily decrypt any of them and may suggest
+several plausible 'project names'. Most of those are not what you want.
+Cross-reference with what you already know about the incident.
 
-Commands here:
-  archive          — list the 3 logs
-  read log1        — show log content (also: read log2, read log3)
+Commands:
+  archive          — list the logs
+  read <id>        — show ciphertext (e.g. read log1, read log4)
   submit <word>    — submit your guess at the codename
   brief / hint`,
       "info"
@@ -151,7 +177,11 @@ Commands here:
         state.get().wrongAttempts++;
         state.addScore(-2);
         state.save();
-        term.println(`[ '${guess}' not the codename. -2 score. ]`, "danger");
+        if (HONEYPOT_ANSWERS.has(guess)) {
+          term.println(`[ '${guess}' is mentioned, but it's not what escaped. read more carefully. -2 score. ]`, "danger");
+        } else {
+          term.println(`[ '${guess}' not the codename. -2 score. ]`, "danger");
+        }
         return;
       }
       default:
