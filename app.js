@@ -208,6 +208,47 @@ async function runLevel(n) {
   updateHeartbeat();
 }
 
+// All commands the dispatcher knows about — used for "did you mean?" suggestions
+const KNOWN_COMMANDS = [
+  "help", "tutorial", "how", "howto", "clear", "status", "team", "share",
+  "seed", "prompts", "prompt", "journal", "log", "reader", "wiki",
+  "inventory", "inv", "hint", "audio", "reset", "skip",
+  // level commands
+  "begin", "brief", "plan", "floor", "sensors", "cctv", "mark", "unmark",
+  "marks", "commit", "archive", "ls", "read", "cat", "submit", "spec",
+  "doors", "hostile", "agent", "radio", "play", "auth", "credits",
+];
+
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  if (!m) return n;
+  if (!n) return m;
+  const dp = Array.from({ length: m + 1 }, (_, i) => i);
+  for (let j = 1; j <= n; j++) {
+    let prev = dp[0]; dp[0] = j;
+    for (let i = 1; i <= m; i++) {
+      const tmp = dp[i];
+      dp[i] = a[i - 1] === b[j - 1]
+        ? prev
+        : 1 + Math.min(prev, dp[i - 1], dp[i]);
+      prev = tmp;
+    }
+  }
+  return dp[m];
+}
+
+function suggestCommand(input) {
+  if (!input || input.length < 2) return null;
+  let best = null, bestD = Infinity;
+  for (const cmd of KNOWN_COMMANDS) {
+    const d = levenshtein(input, cmd);
+    if (d < bestD) { bestD = d; best = cmd; }
+  }
+  // only suggest if reasonably close (within ~40% of length)
+  if (bestD <= Math.max(1, Math.floor(input.length * 0.45))) return best;
+  return null;
+}
+
 function dispatch(line) {
   sfx.key();
   const args = parseCommand(line);
@@ -220,7 +261,12 @@ function dispatch(line) {
     refreshHUD();
     return;
   }
-  term.println(`unknown command: ${cmd} — type 'help'`, "warn");
+  const suggestion = suggestCommand(cmd);
+  if (suggestion) {
+    term.println(`unknown command: ${cmd} — did you mean '${suggestion}'?`, "warn");
+  } else {
+    term.println(`unknown command: ${cmd} — type 'help'`, "warn");
+  }
 }
 
 function handleGlobal(cmd, rest) {
