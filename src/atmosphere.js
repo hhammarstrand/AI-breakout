@@ -97,19 +97,42 @@ export const atmosphere = {
     const remaining = state.containmentRemainingMs();
     let pool = SURV_CALM;
     let scale = 1;
-    if (remaining < 12 * 60 * 1000) { pool = SURV_PANIC; scale = 0.5; }
-    else if (remaining < 25 * 60 * 1000) { pool = SURV_TENSE; scale = 0.7; }
+    let charMs = 70;     // calm = slower, deliberate
+    if (remaining < 12 * 60 * 1000) { pool = SURV_PANIC; scale = 0.5; charMs = 28; }
+    else if (remaining < 25 * 60 * 1000) { pool = SURV_TENSE; scale = 0.7; charMs = 45; }
     const min = SURV_MIN * scale, max = SURV_MAX * scale;
     const wait = min + Math.random() * (max - min);
-    survivorTimer = setTimeout(() => {
+    survivorTimer = setTimeout(async () => {
       if (this._active() && term) {
         const msg = pool[Math.floor(Math.random() * pool.length)];
-        term.println(msg, "survivor");
+        // typewriter feel — survivor is typing on a phone tag, not pasting.
+        // panic = fast, calm = slow with longer pauses on punctuation.
+        if (term.type) {
+          await typeSurvivor(term, msg, charMs);
+        } else {
+          term.println(msg, "survivor");
+        }
       }
       this._scheduleSurvivor();
     }, wait);
   },
 };
+
+async function typeSurvivor(term, text, charMs) {
+  const div = document.createElement("div");
+  div.className = "line survivor";
+  term.root.appendChild(div);
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    div.textContent += ch;
+    term.root.scrollTop = term.root.scrollHeight;
+    // longer pauses on sentence breaks for breathing/emotion
+    let wait = charMs + (Math.random() * 8 - 4);
+    if (ch === "." || ch === "?" || ch === "!") wait += 300;
+    else if (ch === ",") wait += 120;
+    await new Promise((r) => setTimeout(r, Math.max(8, wait)));
+  }
+}
 
 function nowStamp() {
   const d = new Date();
