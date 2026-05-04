@@ -112,8 +112,23 @@ export const ops = {
       <div class="ops-section ops-floor">
         <h4>Floor 4 — Live</h4>
         <svg class="floorplan" viewBox="-2 -2 224 138" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="sweep-grad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%"  stop-color="rgba(108,240,194,0)"/>
+              <stop offset="70%" stop-color="rgba(108,240,194,0.18)"/>
+              <stop offset="100%" stop-color="rgba(108,240,194,0.55)"/>
+            </linearGradient>
+          </defs>
           ${roomEls}
-          <circle class="drone" r="2.6" cx="0" cy="0" style="display:none"/>
+          <rect class="radar-sweep" x="-22" y="-2" width="22" height="142"
+                fill="url(#sweep-grad)" opacity="0.7" pointer-events="none">
+            <animateTransform attributeName="transform" type="translate"
+                              from="-22 0" to="244 0" dur="4.2s" repeatCount="indefinite"/>
+          </rect>
+          <circle class="drone" r="2.6" cx="0" cy="0" style="display:none">
+            <animate attributeName="r" values="2.4;3.4;2.4" dur="1.5s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.85;1;0.85" dur="1.5s" repeatCount="indefinite"/>
+          </circle>
         </svg>
         <div class="ops-legend">
           <span><span class="swatch cold"></span>cool</span>

@@ -79,6 +79,47 @@ function fireGlitch() {
   sfx.glitch();
 }
 
+// quick subtle screen flicker — used as ambient "alive" pulse mid-level.
+function miniGlitch() {
+  if (!ui.crt) return;
+  ui.crt.classList.remove("miniglitch");
+  void ui.crt.offsetWidth;
+  ui.crt.classList.add("miniglitch");
+  setTimeout(() => ui.crt.classList.remove("miniglitch"), 360);
+}
+
+function applyLevelTheme(n) {
+  if (!ui.crt) return;
+  for (let i = 0; i <= 5; i++) ui.crt.classList.remove(`theme-${i}`);
+  ui.crt.classList.add(`theme-${n}`);
+}
+
+function scheduleAmbientPulse() {
+  const wait = 18_000 + Math.random() * 22_000;
+  setTimeout(() => {
+    const lvl = state.get().level;
+    if (lvl >= 1 && lvl <= 4) {
+      // 70% mini glitch, 30% small bpm jitter for ambient life
+      if (Math.random() < 0.7) miniGlitch();
+      else jitterSurvivorBpm();
+    }
+    scheduleAmbientPulse();
+  }, wait);
+}
+
+function jitterSurvivorBpm() {
+  // small heartbeat fluctuation for survivor when she has a tracked BPM
+  // (purely visual — keeps the ops panel feeling alive)
+  const bpmEl = document.getElementById("bpm-val");
+  if (!bpmEl || !bpmEl.textContent || bpmEl.textContent === "—") return;
+  const m = bpmEl.textContent.match(/(\d+)/);
+  if (!m) return;
+  const base = parseInt(m[1], 10);
+  const jitter = Math.round((Math.random() - 0.5) * 6);
+  bpmEl.textContent = `${base + jitter} bpm`;
+  setTimeout(() => { bpmEl.textContent = `${base} bpm`; }, 1400);
+}
+
 let activeLevel = null;
 
 function setLabel() {
@@ -103,6 +144,7 @@ async function runLevel(n) {
   state.setLevel(n);
   setLabel();
   refreshHUD();
+  applyLevelTheme(n);
   if (prev !== n && n > 0) fireGlitch();
   activeLevel = levels[n];
   if (!activeLevel) {
@@ -315,6 +357,7 @@ async function boot() {
   updateTimer();
 
   atmosphere.start();
+  scheduleAmbientPulse();
 
   term.focus();
 

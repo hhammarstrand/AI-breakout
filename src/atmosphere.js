@@ -59,8 +59,8 @@ let survivorTimer = null;
 
 let term = null;
 
-const NOISE_MIN = 35_000, NOISE_MAX = 80_000;
-const SURV_MIN  = 90_000, SURV_MAX  = 180_000;
+const NOISE_MIN = 11_000, NOISE_MAX = 26_000;
+const SURV_MIN  = 45_000, SURV_MAX  = 110_000;
 
 export const atmosphere = {
   attach(terminal) { term = terminal; },

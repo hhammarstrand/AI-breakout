@@ -39,6 +39,47 @@ html, body {
   background:
     radial-gradient(ellipse at center, var(--bg-tint) 0%, var(--bg) 70%, #000 100%);
   animation: flicker 7s infinite;
+  transition: background 1.4s ease-in-out;
+}
+
+/* per-level color themes — subtle radial tint shift */
+.crt.theme-1 {
+  background:
+    radial-gradient(ellipse at center, rgba(8,28,30,0.85) 0%, var(--bg) 70%, #000 100%);
+}
+.crt.theme-2 {
+  /* decryption — cool blue-purple */
+  background:
+    radial-gradient(ellipse at center, rgba(20,18,52,0.7) 0%, var(--bg) 70%, #000 100%);
+}
+.crt.theme-3 {
+  /* engineering — amber */
+  background:
+    radial-gradient(ellipse at center, rgba(48,32,8,0.55) 0%, var(--bg) 70%, #000 100%);
+}
+.crt.theme-4 {
+  /* breach — red alert */
+  background:
+    radial-gradient(ellipse at center, rgba(58,8,12,0.7) 0%, var(--bg) 70%, #000 100%);
+  animation: flicker 5s infinite, redalert 2.4s infinite;
+}
+@keyframes redalert {
+  0%, 100% { box-shadow: inset 0 0 60px 0 rgba(255,40,60,0.05); }
+  50%      { box-shadow: inset 0 0 120px 0 rgba(255,40,60,0.18); }
+}
+.crt.theme-5 {
+  /* extracted — calm green */
+  background:
+    radial-gradient(ellipse at center, rgba(8,40,28,0.7) 0%, var(--bg) 70%, #000 100%);
+}
+
+/* tiny screen flicker — fired ambiently every 18-40s during levels */
+.crt.miniglitch { animation: flicker 7s infinite, miniglitch 0.36s ease-out 1; }
+@keyframes miniglitch {
+  0%   { transform: translate(0, 0); filter: hue-rotate(0deg); }
+  20%  { transform: translate(-1px, 1px) skewX(-1deg); filter: hue-rotate(20deg); }
+  60%  { transform: translate(1px, -1px) skewX(0.6deg); filter: hue-rotate(-15deg); }
+  100% { transform: translate(0, 0); filter: hue-rotate(0deg); }
 }
 
 @keyframes flicker {
@@ -311,8 +352,9 @@ html, body {
 }
 .floorplan .drone {
   fill: var(--accent); stroke: #fff; stroke-width: 0.5;
-  filter: drop-shadow(0 0 4px var(--accent));
+  filter: drop-shadow(0 0 6px var(--accent));
 }
+.floorplan .radar-sweep { mix-blend-mode: screen; }
 
 .ops-legend {
   display: flex; flex-wrap: wrap; gap: 4px 10px;

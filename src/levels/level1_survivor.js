@@ -145,16 +145,20 @@ Commands: plan / sensors / cctv / mark / unmark / marks / commit / brief / hint`
           return;
         }
         term.println("FLOOR 4 — sensor digest (60s avg):", "dim");
-        const stateMap = {};
-        ROOMS.forEach((id) => {
-          term.println(fmtRow(id, SENSORS[id]), "dim");
-          stateMap[id] = classify(SENSORS[id]);
+        ROOMS.forEach((id) => term.println(fmtRow(id, SENSORS[id]), "dim"));
+        term.println("[ scanning rooms... ]", "muted");
+        // sequential floor-plan light-up — feels like a real scan instead of
+        // an instant blob. ~90ms per room.
+        ROOMS.forEach((id, i) => {
+          setTimeout(() => ops.scanRoom(id, classify(SENSORS[id])), i * 90);
         });
-        ops.scanAll(stateMap);
-        ops.updateSurvivor({
-          bpm: 84, tag: "active",
-          location: "floor 4, room unresolved",
-        });
+        setTimeout(() => {
+          ops.updateSurvivor({
+            bpm: 84, tag: "active",
+            location: "floor 4, room unresolved",
+          });
+          term.println("[ scan complete. anomalies highlighted on floor plan. ]", "accent");
+        }, ROOMS.length * 90 + 120);
         return;
       }
       case "cctv": {
