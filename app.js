@@ -189,6 +189,7 @@ function handleGlobal(cmd, rest) {
     case "journal":
     case "log":      return showJournal();
     case "reader":   return toggleReader();
+    case "wiki":     return showWiki(rest);
     case "inventory":
     case "inv":      return showInventory();
     case "hint":     return giveHint();
@@ -218,6 +219,7 @@ function globalHelp() {
   prompts           — show vetted starter prompts for the current level's AI work
   journal | log     — replay all clues/events you've collected (great for late joiners)
   reader            — toggle reader mode (kills flicker/scanlines, bumps font)
+  wiki <topic>      — query the building docs (caveat: generated content not always accurate)
   inventory | inv   — list collected fragments
   hint              — request a hint (first free per level, then -5 pts)
   brief             — re-read the current level briefing
@@ -384,6 +386,70 @@ The facilitator usually announces a per-team seed at the start of a workshop.`,
     "info"
   );
   return true;
+}
+
+// ============== wiki — hallucination teaching tool ==============
+// Confident, well-formatted entries on EVERY query. Real topics return
+// real (terse) info. Decoy topics return believable but FALSE info.
+// Unknown queries get plausible-looking generated content. A single
+// quiet footer line marks generated entries — players who copy-paste
+// this into Claude/Copilot as ground truth get burned.
+
+const WIKI_REAL = {
+  "paraply": "Paraply Bioteknik AB. Privately-held biotech; Helix Tower headquarters. Class-IV containment certified 2024. CEO: undisclosed.",
+  "helix-tower": "12-floor research tower in central campus. Floor 4 is the wet-lab + bio-3 vault. Building management system: paraply-bms-helix.",
+  "aegis": "Project codename used internally at Paraply for a class-IV mycology trial. STATUS: containment failure 2026-03-08.",
+  "drone": "Recovery drone Unit-7. Quad-rotor, payload 2.4kg, IR + tag receiver. Pilot: remote ops console.",
+  "unit-7": "Recovery drone Unit-7 (see 'drone').",
+  "thermite": "Self-sterilization layer in floors 3-5. Ignites at containment-fail T+60min unless overridden via the BMS.",
+  "k-nordlund": "Dr. Karina Nordlund. Senior microbiologist, Paraply. Last-known location: floor 4, server room. Wears emergency tag #K-NORDLUND-01.",
+  "nordlund": "See k-nordlund.",
+  "morse": "International morse code, dot=short, dash=long. Spaces between letters; '/' between words. The radio plays 2 letters looping.",
+};
+
+const WIKI_DECOYS = {
+  // these LOOK authoritative but are wrong on purpose — teach verification
+  "helios": "Project HELIOS. Paraply HVAC modernization initiative, phase 3 of 4. Filter rotations on floors 1-3. Operationally unrelated to bio research, often cited in routine facility reports.",
+  "seafoam": "Project SEAFOAM. Internal access-log review program. Routine compliance audits across floors 1-12. Last updated last quarter.",
+  "k2":      "Strain K2. Mycelial cultivar from the Paraply spore library. Used in sealant research. Note: not the AEGIS variant.",
+  "j7":      "Strain J7. Industrial enzyme producer, project ENZYME-7. Non-pathogenic.",
+  "containment override": "Override authorization is a 3-segment code: PROJECT-STRAIN-ROOM. This article last reviewed by facilities; bio-3 vault overrides may use a different non-public format.",
+};
+
+function showWiki(rest) {
+  const topic = (rest.join(" ") || "").trim().toLowerCase();
+  if (!topic) {
+    term.println("usage: wiki <topic>   (try: paraply, aegis, drone, thermite, helix-tower, k-nordlund)", "muted");
+    return true;
+  }
+  term.println("", "");
+  term.println(`WIKI ▸ ${topic.toUpperCase()}`, "system");
+  if (WIKI_REAL[topic]) {
+    term.println("  " + WIKI_REAL[topic], "info");
+    term.println("  [verified entry · last reviewed by ops lead]", "muted");
+    return true;
+  }
+  if (WIKI_DECOYS[topic]) {
+    term.println("  " + WIKI_DECOYS[topic], "info");
+    term.println("  [auto-generated stub · accuracy not curated]", "muted");
+    return true;
+  }
+  // unknown topic — generate plausible-sounding fake entry
+  term.println("  " + fakeWikiEntry(topic), "info");
+  term.println("  [auto-generated stub · accuracy not curated]", "muted");
+  return true;
+}
+
+function fakeWikiEntry(topic) {
+  // deterministic hash so the same query gives the same fake answer in a session
+  let h = 0;
+  for (let i = 0; i < topic.length; i++) h = (h << 5) - h + topic.charCodeAt(i);
+  const pick = (arr) => arr[Math.abs(h + arr.length) % arr.length];
+  const role = pick(["sub-system", "project", "operations group", "lab section", "personnel record", "asset tag"]);
+  const dept = pick(["facilities", "research", "security", "biosafety", "network ops", "compliance"]);
+  const status = pick(["operational", "scheduled review", "in maintenance window", "deprecated 2025", "monitored"]);
+  const stamp = pick(["q3 2025", "2026-01", "2025-12", "2026-02", "2025-10"]);
+  return `${topic.toUpperCase()} — ${role} (${dept}). status: ${status}. last entry: ${stamp}.`;
 }
 
 function showJournal() {
