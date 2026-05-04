@@ -15,6 +15,7 @@ const initial = () => ({
   extractedAt: null,   // ms epoch — when player reached outro (freezes timer)
   audio: true,
   teamName: null,      // optional team label for facilitator-friendly status share
+  journal: [],         // [{ ts, kind, text }] auto-log of key events
   bestRun: null,       // { timeSec, score, hintsUsed, wrongAttempts, sig, at }
 });
 
@@ -41,7 +42,10 @@ export const state = {
 
   addScore(n) { cache.score = Math.max(0, cache.score + n); this.save(); },
   addItem(item) {
-    if (!cache.inventory.includes(item)) cache.inventory.push(item);
+    if (!cache.inventory.includes(item)) {
+      cache.inventory.push(item);
+      this.logEntry(`fragment acquired: ${item}`, "accent");
+    }
     this.save();
   },
   hasItem(item) { return cache.inventory.includes(item); },
@@ -50,12 +54,18 @@ export const state = {
     if (!cache.completed.includes(n)) {
       cache.completed.push(n);
       cache.completed.sort();
+      this.logEntry(`L${n} complete`, "system");
     }
     cache.level = Math.max(cache.level, n + 1);
     this.save();
   },
 
-  setLevel(n) { cache.level = n; this.save(); },
+  setLevel(n) {
+    if (cache.level !== n) {
+      this.logEntry(n >= 5 ? "extracted" : `entered L${n}`, "info");
+    }
+    cache.level = n; this.save();
+  },
 
   totalLevels: TOTAL_LEVELS,
 
@@ -81,6 +91,16 @@ export const state = {
 
   setTeamName(name) {
     cache.teamName = name ? String(name).trim().slice(0, 24) : null;
+    this.save();
+  },
+
+  // Append a key event to the journal. Used for level transitions, hint
+  // usage, item acquisition — anything that helps a late-joiner catch up.
+  logEntry(text, kind = "info") {
+    if (!cache.journal) cache.journal = [];
+    cache.journal.push({ ts: Date.now(), kind, text });
+    // cap at 200 entries to keep localStorage small
+    if (cache.journal.length > 200) cache.journal.shift();
     this.save();
   },
 

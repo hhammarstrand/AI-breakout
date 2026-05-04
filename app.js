@@ -186,6 +186,8 @@ function handleGlobal(cmd, rest) {
     case "seed":     return showSeed();
     case "prompts":
     case "prompt":   return showPrompts();
+    case "journal":
+    case "log":      return showJournal();
     case "inventory":
     case "inv":      return showInventory();
     case "hint":     return giveHint();
@@ -213,6 +215,7 @@ function globalHelp() {
   share             — copy your status / final result link to clipboard
   seed              — show your mission seed (and how to change it)
   prompts           — show vetted starter prompts for the current level's AI work
+  journal | log     — replay all clues/events you've collected (great for late joiners)
   inventory | inv   — list collected fragments
   hint              — request a hint (first free per level, then -5 pts)
   brief             — re-read the current level briefing
@@ -381,6 +384,25 @@ The facilitator usually announces a per-team seed at the start of a workshop.`,
   return true;
 }
 
+function showJournal() {
+  const entries = state.get().journal || [];
+  if (!entries.length) {
+    term.println("(journal empty — events will appear here as you progress)", "muted");
+    return true;
+  }
+  term.println("", "");
+  term.println("=== JOURNAL — chronological event log ===", "system");
+  const start = state.get().containmentStart || entries[0].ts;
+  entries.forEach((e) => {
+    const sec = Math.max(0, Math.floor((e.ts - start) / 1000));
+    const m = Math.floor(sec / 60).toString().padStart(2, "0");
+    const ss = (sec % 60).toString().padStart(2, "0");
+    term.println(`  +${m}:${ss}  ${e.text}`, e.kind || "info");
+  });
+  term.println("", "");
+  return true;
+}
+
 function showPrompts() {
   const lvl = state.get().level;
   const prompts = getPrompts(lvl);
@@ -438,6 +460,7 @@ function giveHint() {
     return true;
   }
   state.get().hintsUsed += 1;
+  state.logEntry(`hint used (L${lvl}, ${h.tier})`, "warn");
   state.save();
   const label = h.tier ? `${h.tier} ${h.index}/${h.total}` : `${h.index}/${h.total}`;
   term.println(`[hint · ${label}]`, "warn");
