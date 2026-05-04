@@ -85,9 +85,10 @@ Commands: inventory / radio / play morse / auth <code> / brief / hint`,
     switch (cmd) {
       case "brief": return this.start(ctx);
       case "radio": {
-        term.println("intercepted radio (last 4s):", "dim");
-        term.println(`  ${MORSE_SEQ}`, "info");
-        term.println(`  ('play morse' to hear it through the speakers)`, "muted");
+        term.println("intercepted radio (last 4s, looped):", "dim");
+        term.println("  signal type: morse — short and long pulses, periodic", "info");
+        term.println("  type 'play morse' to listen on the speakers.", "muted");
+        term.println("  no automated transcript available — transcribe by ear or have AI help interpret.", "muted");
         return;
       }
       case "play": {
@@ -98,8 +99,8 @@ Commands: inventory / radio / play morse / auth <code> / brief / hint`,
         played++;
         term.println("[ playing through site speakers... ]", "muted");
         try { await playMorse(MORSE_SEQ); } catch {}
-        if (played >= 3) {
-          term.println(`[ transcript hint: ${MORSE_SEQ} ]`, "muted");
+        if (played >= 5) {
+          term.println("[ tip: hum or write down each pulse as . or - then ask your AI to decode the morse string ]", "muted");
         }
         return;
       }
