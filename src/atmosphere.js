@@ -22,7 +22,7 @@ const NOISE_POOL = [
   "[SEC]  no breath signature in motion zones :: floor-4",
   "[PWR]  ups :: estimated runtime 47 min",
   "[FIRE] thermite suppression timer :: T-MINUS active",
-  "[BMS]  sub-system :: parasoll-bms-helix :: heartbeat 3s",
+  "[BMS]  sub-system :: paraply-bms-helix :: heartbeat 3s",
   "[SEC]  thermal source :: 39.8°C :: 4-15 :: tracking",
 ];
 

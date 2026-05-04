@@ -1,4 +1,4 @@
-// Live ops console: hexagonal Parasoll logo, SVG floor plan with state-driven
+// Live ops console: hexagonal Paraply logo, SVG floor plan with state-driven
 // coloring, drone/survivor/thermite modules. Each level toggles relevant
 // sections via setMode().
 
@@ -38,7 +38,7 @@ const DEFAULT_TIME_MS = 60 * 60 * 1000;
 let containmentRemainingMs = DEFAULT_TIME_MS;
 
 // hex frame + double-helix glyph — bio-tech corporate mark, original.
-const PARASOLL_LOGO = `<svg class="logo" viewBox="0 0 100 100" aria-hidden="true">
+const PARAPLY_LOGO = `<svg class="logo" viewBox="0 0 100 100" aria-hidden="true">
   <defs>
     <linearGradient id="pg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#ff8a8a" stop-opacity="0.9"/>
@@ -69,9 +69,9 @@ export const ops = {
     if (!panelEl) return;
     panelEl.innerHTML = `
       <div class="ops-section ops-brand">
-        ${PARASOLL_LOGO}
+        ${PARAPLY_LOGO}
         <div class="ops-brand-text">
-          <div class="brand">PARASOLL</div>
+          <div class="brand">PARAPLY</div>
           <div class="brand-sub">// BIOTEKNIK AB</div>
           <div class="brand-tag">building mgmt :: helix tower</div>
         </div>
