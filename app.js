@@ -131,6 +131,9 @@ function dispatch(line) {
 function handleGlobal(cmd, rest) {
   switch (cmd) {
     case "help":     return globalHelp();
+    case "tutorial":
+    case "how":
+    case "howto":    return showTutorial();
     case "clear":    term.clear(); return true;
     case "status":   return showStatus();
     case "inventory":
@@ -154,9 +157,11 @@ function globalHelp() {
   term.printBlock(
 `global commands:
   help              — show this list
+  tutorial | how    — explain how the game works (read this first!)
   status            — mission status
   inventory | inv   — list collected fragments
   hint              — request a hint (first free per level, then -5 pts)
+  brief             — re-read the current level briefing
   clear             — clear the terminal
   audio             — toggle SFX
   reset --confirm   — wipe all progress
@@ -164,6 +169,61 @@ function globalHelp() {
 level-specific commands appear after each briefing. type 'brief' to re-read it.`,
     "dim"
   );
+  return true;
+}
+
+function showTutorial() {
+  term.println("", "");
+  term.println("=== HOW BLACKOUT WORKS ===", "system");
+  term.println("", "");
+  term.printBlock(
+`YOU are remote operators sitting at this console. Your job is to guide
+Dr. Nordlund out of an infected research tower in ~60 real minutes.
+
+The whole experience is TEXT — you type commands at the bottom prompt
+and press Enter. The live ops panel on the right reflects state.`,
+    "info"
+  );
+  term.println("", "");
+  term.printBlock(
+`THE PROMPT (bottom of screen)
+  • type a command, press Enter to submit
+  • ↑ / ↓ recalls previous commands
+  • the label 'op@blackout:lvl-N$' shows which level you're on
+
+THE 4 LEVELS (~12 min each)
+  L1  locate the survivor + identify hostile rooms (sensors + CCTV)
+  L2  decrypt 3 lab logs to find the project codename
+  L3  build a door-routing agent to plot a safe path to the roof
+  L4  combine fragments + decoded morse to override containment
+
+THE AI IS YOUR PARTNER — THIS IS THE WHOLE POINT
+  • open Claude / Copilot / Gemini in a side window or second screen
+  • each puzzle gives you data (sensor logs, ciphertext, code spec...)
+  • PASTE that data into the AI and ask for help
+  • the AI does the mechanical work; you verify and synthesize
+  • without AI you cannot finish in time — that is intentional
+
+THE OPS PANEL (right side)
+  • floor plan lights up rooms as you scan them (cool/warm/hot/survivor)
+  • survivor vitals show heart rate + emergency tag status
+  • drone shows current position + battery
+  • thermite bar = remaining time. at 00:00 the building self-sterilizes
+
+WHEN YOU GET STUCK
+  • 'brief' — re-read the current level's briefing
+  • 'help' — list global commands
+  • 'hint' — first hint per level is free, then -5 pts each
+  • each level's briefing lists its own command set under "Commands:"
+
+GETTING STARTED RIGHT NOW
+  • if you see the boot logo + briefing, type:  begin
+  • once in a level, follow the "Commands:" line shown after the brief
+  • inventory + score persist between refreshes; the timer keeps running`,
+    "dim"
+  );
+  term.println("", "");
+  term.println("ready? type 'begin' to start, or 'brief' to re-read the current level.", "accent");
   return true;
 }
 

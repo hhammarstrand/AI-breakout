@@ -77,12 +77,14 @@ export const intro = {
     term.println("", "");
     term.printBlock(
 `available commands at any time:
-  help        status        inventory     hint
-  clear       audio         brief         begin`,
+  help        tutorial      status        inventory
+  hint        clear         audio         brief         begin`,
       "muted"
     );
     term.println("", "");
-    term.println("type 'begin' when your team is ready.", "accent");
+    term.println("first time? type 'tutorial' to learn how the game works.", "info");
+    term.println("ready? type 'begin' to start the operation.", "accent");
+    term.println("(↓ click the input field at the bottom and start typing.)", "muted");
     term.setEnabled(true);
     state.startContainment();
     sfx.alarm();
