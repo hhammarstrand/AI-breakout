@@ -67,8 +67,8 @@ export const atmosphere = {
 
   start() {
     this.stop();
-    this.#scheduleNoise();
-    this.#scheduleSurvivor();
+    this._scheduleNoise();
+    this._scheduleSurvivor();
   },
 
   stop() {
@@ -76,24 +76,24 @@ export const atmosphere = {
     if (survivorTimer) { clearTimeout(survivorTimer); survivorTimer = null; }
   },
 
-  #active() {
+  _active() {
     const lvl = state.get().level;
     return lvl >= 1 && lvl <= 4;
   },
 
-  #scheduleNoise() {
+  _scheduleNoise() {
     const wait = NOISE_MIN + Math.random() * (NOISE_MAX - NOISE_MIN);
     timer = setTimeout(() => {
-      if (this.#active() && term) {
+      if (this._active() && term) {
         const line = NOISE_POOL[Math.floor(Math.random() * NOISE_POOL.length)];
         const ts = nowStamp();
         term.println(`${ts}  ${line}`, "noise");
       }
-      this.#scheduleNoise();
+      this._scheduleNoise();
     }, wait);
   },
 
-  #scheduleSurvivor() {
+  _scheduleSurvivor() {
     const remaining = state.containmentRemainingMs();
     let pool = SURV_CALM;
     let scale = 1;
@@ -102,11 +102,11 @@ export const atmosphere = {
     const min = SURV_MIN * scale, max = SURV_MAX * scale;
     const wait = min + Math.random() * (max - min);
     survivorTimer = setTimeout(() => {
-      if (this.#active() && term) {
+      if (this._active() && term) {
         const msg = pool[Math.floor(Math.random() * pool.length)];
         term.println(msg, "survivor");
       }
-      this.#scheduleSurvivor();
+      this._scheduleSurvivor();
     }, wait);
   },
 };

@@ -77,14 +77,14 @@ export const ops = {
         </div>
       </div>
 
-      ${this.#sectionFloor()}
-      ${this.#sectionVitals()}
-      ${this.#sectionDrone()}
-      ${this.#sectionThermite()}
+      ${this._sectionFloor()}
+      ${this._sectionVitals()}
+      ${this._sectionDrone()}
+      ${this._sectionThermite()}
     `;
     floorSvg = panelEl.querySelector(".floorplan");
     droneEl = panelEl.querySelector(".drone");
-    this.#applyDronePos();
+    this._applyDronePos();
     this.updateThermite(containmentRemainingMs);
     this.updateSurvivor(survivor);
     this.updateDrone(droneState);
@@ -92,7 +92,7 @@ export const ops = {
 
   // ============== floor plan ==============
 
-  #sectionFloor() {
+  _sectionFloor() {
     const roomEls = ROOMS.map((r) => {
       const cx = r.x + r.w / 2;
       const cy = r.y + r.h / 2 + 1.2;
@@ -125,7 +125,7 @@ export const ops = {
 
   // ============== vitals (survivor) ==============
 
-  #sectionVitals() {
+  _sectionVitals() {
     return `
       <div class="ops-section ops-vitals">
         <h4>Survivor — tag K-NORDLUND</h4>
@@ -158,7 +158,7 @@ export const ops = {
 
   // ============== drone ==============
 
-  #sectionDrone() {
+  _sectionDrone() {
     return `
       <div class="ops-section ops-drone">
         <h4>Drone — Unit-7</h4>
@@ -191,10 +191,10 @@ export const ops = {
     dronePos = roomId;
     droneState.pos = roomId;
     this.updateDrone({});
-    this.#applyDronePos();
+    this._applyDronePos();
   },
 
-  #applyDronePos() {
+  _applyDronePos() {
     if (!droneEl) return;
     const r = ROOM_BY_ID.get(dronePos);
     if (!r) { droneEl.style.display = "none"; return; }
@@ -205,7 +205,7 @@ export const ops = {
 
   // ============== thermite ==============
 
-  #sectionThermite() {
+  _sectionThermite() {
     return `
       <div class="ops-section ops-thermite">
         <h4>Thermite suppression</h4>
