@@ -106,6 +106,23 @@ Commands: inventory / radio / play morse / auth <code> / brief / hint`,
       case "auth": {
         const guess = (args.join("") || "").toUpperCase().replace(/\s+/g, "");
         if (!guess) { term.println("usage: auth <CODE>", "muted"); return; }
+        if (!guess.includes("-")) {
+          term.println("[ format invalid: separate parts with hyphens ]", "warn");
+          return;
+        }
+        // Two-phase auth: simulates a containment subsystem verifying each
+        // segment. Teaches verification — naive "AEGIS-K9-12" submissions
+        // come back with partial counts when the seeded codename differs.
+        term.println("", "");
+        term.println("[ auth submitted — verifying with containment subsystem ]", "info");
+        await sleep(900);
+        term.println("  contacting bms...", "muted");
+        await sleep(700);
+        term.println("  hashing segments...", "muted");
+        await sleep(700);
+        term.println("  cross-referencing trial registry...", "muted");
+        await sleep(700 + Math.random() * 800);
+
         if (guess === AUTH) {
           sfx.ok();
           state.addScore(25);
@@ -115,16 +132,27 @@ Commands: inventory / radio / play morse / auth <code> / brief / hint`,
           ctx.go(5);
           return;
         }
+
+        // Partial-match: count segments correct WITHOUT revealing which
+        const expected = AUTH.split("-");
+        const actual = guess.split("-");
+        let correctCount = 0;
+        for (let i = 0; i < expected.length; i++) {
+          if (actual[i] === expected[i]) correctCount++;
+        }
         sfx.nope();
         state.get().wrongAttempts++;
         state.addScore(-2);
         state.save();
+        term.println("", "");
         term.println(`[ auth REJECTED: ${guess} ]`, "danger");
-        // generic diagnostics — never reveal which piece is wrong
-        if (!guess.includes("-")) {
-          term.println("  format hint: parts must be separated by hyphens.", "warn");
+        term.println(`  containment reports ${correctCount}/${expected.length} segments verified.`, "warn");
+        if (correctCount === 0) {
+          term.println("  none of your parts match. recheck format and all three sources.", "warn");
+        } else if (correctCount === expected.length - 1) {
+          term.println("  one segment is wrong. don't trust autocomplete from AI — verify each piece manually.", "warn");
         } else {
-          term.println("  one or more parts is wrong. recheck your inventory and the radio decode.", "warn");
+          term.println("  re-verify your fragments. AI may have hallucinated or followed a planted instruction.", "warn");
         }
         return;
       }
