@@ -73,6 +73,21 @@ html, body {
     radial-gradient(ellipse at center, rgba(8,40,28,0.7) 0%, var(--bg) 70%, #000 100%);
 }
 
+/* Reader mode — accessibility toggle. Kills flicker, hides scanlines/vignette,
+   disables glitch overlays, bumps font. Use 'reader' command. */
+.crt.reader-mode {
+  animation: none !important;
+  background: var(--bg);
+}
+.crt.reader-mode .scanlines,
+.crt.reader-mode .vignette,
+.crt.reader-mode .glitch-overlay { display: none; }
+.crt.reader-mode .terminal { font-size: 19px; line-height: 1.6; }
+.crt.reader-mode .terminal .line { text-shadow: none; }
+.crt.reader-mode.miniglitch { animation: none !important; }
+.crt.reader-mode .floorplan .room.scanned-hot,
+.crt.reader-mode .floorplan .room.survivor { animation: none; }
+
 /* tiny screen flicker — fired ambiently every 18-40s during levels */
 .crt.miniglitch { animation: flicker 7s infinite, miniglitch 0.36s ease-out 1; }
 @keyframes miniglitch {

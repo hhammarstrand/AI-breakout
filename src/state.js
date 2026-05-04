@@ -14,6 +14,7 @@ const initial = () => ({
   containmentStart: null, // ms epoch — when 60-min timer started
   extractedAt: null,   // ms epoch — when player reached outro (freezes timer)
   audio: true,
+  readerMode: false,   // accessibility: kills flicker/scanlines + bumps font
   teamName: null,      // optional team label for facilitator-friendly status share
   journal: [],         // [{ ts, kind, text }] auto-log of key events
   bestRun: null,       // { timeSec, score, hintsUsed, wrongAttempts, sig, at }
@@ -88,6 +89,8 @@ export const state = {
   },
 
   toggleAudio() { cache.audio = !cache.audio; this.save(); return cache.audio; },
+
+  toggleReaderMode() { cache.readerMode = !cache.readerMode; this.save(); return cache.readerMode; },
 
   setTeamName(name) {
     cache.teamName = name ? String(name).trim().slice(0, 24) : null;

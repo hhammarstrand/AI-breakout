@@ -188,6 +188,7 @@ function handleGlobal(cmd, rest) {
     case "prompt":   return showPrompts();
     case "journal":
     case "log":      return showJournal();
+    case "reader":   return toggleReader();
     case "inventory":
     case "inv":      return showInventory();
     case "hint":     return giveHint();
@@ -216,6 +217,7 @@ function globalHelp() {
   seed              — show your mission seed (and how to change it)
   prompts           — show vetted starter prompts for the current level's AI work
   journal | log     — replay all clues/events you've collected (great for late joiners)
+  reader            — toggle reader mode (kills flicker/scanlines, bumps font)
   inventory | inv   — list collected fragments
   hint              — request a hint (first free per level, then -5 pts)
   brief             — re-read the current level briefing
@@ -482,6 +484,19 @@ function toggleAudio() {
   return true;
 }
 
+function applyReaderMode() {
+  if (!ui.crt) return;
+  if (state.get().readerMode) ui.crt.classList.add("reader-mode");
+  else ui.crt.classList.remove("reader-mode");
+}
+
+function toggleReader() {
+  const enabled = state.toggleReaderMode();
+  applyReaderMode();
+  term.println(enabled ? "reader mode: ON (flicker/scanlines off)" : "reader mode: OFF", "muted");
+  return true;
+}
+
 function doReset(confirmed) {
   if (!confirmed) {
     term.println("type 'reset --confirm' to wipe all progress.", "warn");
@@ -501,6 +516,7 @@ async function boot() {
   setLabel();
   ui.audioBtn.textContent = state.get().audio ? "SFX ON" : "SFX OFF";
   ui.audioBtn.addEventListener("click", () => toggleAudio());
+  applyReaderMode();
 
   document.getElementById("prompt-form").addEventListener("submit", (e) => {
     e.preventDefault();
