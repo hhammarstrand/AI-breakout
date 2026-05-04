@@ -183,6 +183,7 @@ function handleGlobal(cmd, rest) {
     case "status":   return showStatus();
     case "team":     return setTeam(rest);
     case "share":    return doShare();
+    case "seed":     return showSeed();
     case "prompts":
     case "prompt":   return showPrompts();
     case "inventory":
@@ -210,6 +211,7 @@ function globalHelp() {
   status            — mission status (with team share line for facilitator)
   team <name>       — label your team (shown on status share)
   share             — copy your status / final result link to clipboard
+  seed              — show your mission seed (and how to change it)
   prompts           — show vetted starter prompts for the current level's AI work
   inventory | inv   — list collected fragments
   hint              — request a hint (first free per level, then -5 pts)
@@ -357,6 +359,26 @@ function buildStatusUrl() {
   };
   const enc = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
   return `${location.origin}${location.pathname}?status=${enc}`;
+}
+
+function showSeed() {
+  const m = getMission();
+  term.println("", "");
+  term.printBlock(
+`mission seed: ${m.seed}
+
+Each seed picks a different codename + strain ID, so two teams with
+different seeds cannot share auth codes. Doors and rooms stay the same.
+
+To play with a different seed, append ?seed=<anything> to the URL:
+  ${location.origin}${location.pathname}?seed=alpha
+  ${location.origin}${location.pathname}?seed=team7
+  ${location.origin}${location.pathname}?seed=$(date +%s)
+
+The facilitator usually announces a per-team seed at the start of a workshop.`,
+    "info"
+  );
+  return true;
 }
 
 function showPrompts() {
