@@ -22,9 +22,9 @@ export const level4 = {
   registerHints(ctx) {
     if (this.registered) return;
     ctx.registerHints(4, [
-      "Open your inventory. Two of the three auth pieces are sitting in there: the codename from L2, and the room number from L1 (look at the ROOM-XX fragment).",
-      "The third piece comes from the radio — short and long pulses are MORSE. Decode it with AI. It's a strain ID you saw in lab-log-2026-01-14 (log1 from L2).",
-      "The auth format is: <codename>-<strain>-<room>. Hyphens between, all caps. Example shape: WORD-WORD-NUMBER",
+      "Three pieces. Two are already in your inventory from earlier levels. One is being broadcast on the radio.",
+      "Short and long pulses on the radio are MORSE. Decode it with AI — the result is a 2-character strain identifier.",
+      "Auth format: three parts separated by hyphens, ALL CAPS. Order matters — the piece that names the project comes first, then the strain, then the location.",
     ]);
     this.registered = true;
   },
@@ -42,16 +42,11 @@ export const level4 = {
 `Drone has the survivor at the rooftop. Extraction is two minutes out.
 But thermite suppression is still armed. Override the containment system.
 
-THE AUTH CODE has THREE parts, joined with hyphens, ALL CAPS:
-    <codename> - <strain> - <room>
+The containment auth code is built from THREE pieces:
+  • two are already on you — review your 'inventory' carefully
+  • the third is being broadcast on the radio (intercepted, see 'radio')
 
-WHERE TO FIND EACH PART
-  • <codename>  →  in your inventory (the L2 codename you submitted)
-  • <strain>    →  decode the MORSE on the radio (use AI). it's a 2-char
-                   strain ID you also saw in log1 from L2.
-  • <room>      →  in your inventory as ROOM-XX. just the number.
-
-Submit:    auth <CODE>
+Format: hyphen-separated, ALL CAPS. Beyond that, you figure it out.
 
 Commands: inventory / radio / play morse / auth <code> / brief / hint`,
       "info"
@@ -83,7 +78,7 @@ Commands: inventory / radio / play morse / auth <code> / brief / hint`,
       }
       case "auth": {
         const guess = (args.join("") || "").toUpperCase().replace(/\s+/g, "");
-        if (!guess) { term.println("usage: auth AEGIS-K9-12", "muted"); return; }
+        if (!guess) { term.println("usage: auth <CODE>", "muted"); return; }
         if (guess === AUTH) {
           sfx.ok();
           state.addScore(25);
@@ -98,11 +93,12 @@ Commands: inventory / radio / play morse / auth <code> / brief / hint`,
         state.addScore(-2);
         state.save();
         term.println(`[ auth REJECTED: ${guess} ]`, "danger");
-        // per-piece diagnostics so player sees exactly what's missing
-        if (!guess.includes("AEGIS")) term.println("  ✗ codename missing — check inventory for the L2 codename.", "warn");
-        if (!guess.includes(MORSE_PLAINTEXT)) term.println("  ✗ strain ID missing — decode the morse on radio.", "warn");
-        if (!/12/.test(guess)) term.println("  ✗ room number missing — look at ROOM-XX in inventory.", "warn");
-        if (!guess.includes("-")) term.println("  ✗ format wrong — separate parts with hyphens.", "warn");
+        // generic diagnostics — never reveal which piece is wrong
+        if (!guess.includes("-")) {
+          term.println("  format hint: parts must be separated by hyphens.", "warn");
+        } else {
+          term.println("  one or more parts is wrong. recheck your inventory and the radio decode.", "warn");
+        }
         return;
       }
       default:

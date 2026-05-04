@@ -12,7 +12,7 @@ const SOURCE = {
     body:
 `day 014 of project AEGIS.
 the substrate accepts cellulose better than predicted.
-strain k9 self-organizes into mycelial sheets within 41 hours.
+the new strain self-organizes into mycelial sheets within 41 hours.
 nordlund is convinced this will eat the mold problem in helix tower.
 i think she is right. the question is whether anything else gets eaten.
 - s.weiss`,
@@ -67,8 +67,8 @@ export const level2 = {
   registerHints(ctx) {
     if (this.registered) return;
     ctx.registerHints(2, [
-      "Three logs, three different ciphers. The ciphers are listed next to each log title.",
-      "Caesar is a letter-shift. Base64 is reversible to bytes. Vigenère uses a repeating keyword — its key is on the email envelope.",
+      "Three logs, three different ciphers. Paste each ciphertext into Claude/Copilot/Gemini and ask 'what cipher is this and what's the plaintext?'.",
+      "Common possibilities: Caesar (letter-shift), Base64 (bytes), Vigenère (uses a repeating keyword — and the keyword shows up somewhere in the email envelope).",
       "The same project codename appears in every decoded log. It's the answer.",
     ]);
     this.registered = true;
@@ -85,30 +85,25 @@ export const level2 = {
     term.println("", "");
     term.printBlock(
 `Three log files were exfiltrated from Dr. Nordlund's machine before the
-firmware wipe. Each is encoded with a DIFFERENT cipher.
+firmware wipe. Each is encoded with a DIFFERENT cipher. We don't know which.
 
 YOUR JOB
   • read all three logs
-  • decrypt each with AI's help (paste ciphertext + cipher type into Claude)
+  • figure out what cipher each is using
+  • decrypt with AI's help
   • find the project codename that appears in ALL THREE decoded files
 
-USE AI — paste the ciphertext into Claude / Copilot / Gemini and ask:
-  "decrypt this <cipher type>: <paste ciphertext>"
+USE AI — paste the ciphertext into Claude / Copilot / Gemini and ask it
+to identify the encoding and produce the plaintext. Some ciphers leave
+hints about themselves; some hide the key in plain sight.
 
 Commands here:
-  archive       — list all 3 logs with their cipher types
-  read log1     — show log content (also: read log2, read log3)
-  submit AEGIS  — submit your guess at the codename
+  archive          — list the 3 logs
+  read log1        — show log content (also: read log2, read log3)
+  submit <word>    — submit your guess at the codename
   brief / hint`,
       "info"
     );
-    // auto-list the archive so the player sees cipher types immediately
-    term.println("", "");
-    term.println("recovered logs:", "dim");
-    for (const [id, l] of Object.entries(LOGS)) {
-      term.println(`  ${id}   ${l.title.padEnd(28)}  cipher: ${l.enc}${l.key ? " (key=" + l.key + ")" : ""}`, "dim");
-    }
-    listed = true;
   },
 
   onCommand(cmd, args, raw, ctx) {
@@ -119,7 +114,7 @@ Commands here:
       case "ls": {
         term.println("recovered logs:", "dim");
         for (const [id, l] of Object.entries(LOGS)) {
-          term.println(`  ${id}   ${l.title.padEnd(28)}  cipher: ${l.enc}${l.key ? " (key on envelope)" : ""}`, "dim");
+          term.println(`  ${id}   ${l.title}`, "dim");
         }
         listed = true;
         return;
@@ -132,7 +127,7 @@ Commands here:
           return;
         }
         const l = LOGS[id];
-        term.println(`=== ${l.title}    [${l.enc}${l.key ? " key=" + l.key : ""}] ===`, "dim");
+        term.println(`=== ${l.title} ===`, "dim");
         l.cipher.split("\n").forEach((line) => term.println(line, "info"));
         return;
       }
