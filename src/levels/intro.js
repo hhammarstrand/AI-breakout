@@ -70,7 +70,7 @@ export const intro = {
     term.printBlock(
 `primary objectives:
   L1  locate survivor                    — read sensors and CCTV, deduce position
-  L2  decrypt lab logs                   — recover what aegis was running
+  L2  decrypt lab logs                   — recover the project codename
   L3  build a door-routing agent         — clear a path through the building
   L4  override containment               — auth code, then extract`,
       "dim"

@@ -45,7 +45,7 @@ const SENSORS = {
 };
 
 const CCTV = {
-  "4-03": "image: thermal overlay, near-white silhouette pacing in tight loop. no exhalation plume detected. one hand drags along the wall. uniform: aegis lab coat, torn.",
+  "4-03": "image: thermal overlay, near-white silhouette pacing in tight loop. no exhalation plume detected. one hand drags along the wall. uniform: Paraply lab coat, torn.",
   "4-07": "image: lab bench overturned. fluid pooled. silhouette crouched over a second silhouette. no movement of chest cavity on either subject. ambient chitter audible — believed to be relay clicks.",
   "4-11": "image: comms patch room. cold. no occupants. one rack flashing AMBER on uplink-3.",
   "4-12": "image: server room. low light. visible occupant: small frame, breathing rate 14/min, slumped against rack 7. left hand pressed to neck (likely wound or radio). right hand holds emergency tag glowing green.",

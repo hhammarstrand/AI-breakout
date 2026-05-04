@@ -18,7 +18,7 @@ const NOISE_POOL = [
   "[PWR]  generator 2 :: cycling :: rpm 3140",
   "[SEC]  audio anomaly floor-4 :: percussive :: 4 events/min",
   "[NET]  packet loss :: link to extr-relay :: 12.3%",
-  "[BMS]  sprinkler valve 4-07 :: stuck closed :: aegis lab override",
+  "[BMS]  sprinkler valve 4-07 :: stuck closed :: paraply lab override",
   "[SEC]  no breath signature in motion zones :: floor-4",
   "[PWR]  ups :: estimated runtime 47 min",
   "[FIRE] thermite suppression timer :: T-MINUS active",
