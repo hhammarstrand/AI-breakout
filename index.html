@@ -53,7 +53,10 @@ or any other static server (npx serve, caddy, etc).
     <form id="prompt-form" class="prompt-row" autocomplete="off">
       <span id="prompt-label" class="prompt-label">op@blackout:~$</span>
       <input id="prompt-input" class="prompt-input" type="text" spellcheck="false"
-             autocapitalize="off" autocomplete="off" aria-label="terminal input" />
+             autocapitalize="off" autocomplete="off" aria-label="terminal input"
+             placeholder="type a command — try 'help'" />
+      <span class="prompt-blink" aria-hidden="true">▮</span>
+      <span class="prompt-hint" aria-hidden="true">↵ enter</span>
     </form>
   </div>
 
