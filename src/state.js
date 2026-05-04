@@ -14,6 +14,7 @@ const initial = () => ({
   containmentStart: null, // ms epoch — when 60-min timer started
   extractedAt: null,   // ms epoch — when player reached outro (freezes timer)
   audio: true,
+  teamName: null,      // optional team label for facilitator-friendly status share
   bestRun: null,       // { timeSec, score, hintsUsed, wrongAttempts, sig, at }
 });
 
@@ -77,6 +78,11 @@ export const state = {
   },
 
   toggleAudio() { cache.audio = !cache.audio; this.save(); return cache.audio; },
+
+  setTeamName(name) {
+    cache.teamName = name ? String(name).trim().slice(0, 24) : null;
+    this.save();
+  },
 
   // Record a completed run; updates bestRun if it beats the previous one.
   // Returns { isBest, previous } so the UI can display "NEW PERSONAL BEST".

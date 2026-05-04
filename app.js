@@ -178,6 +178,8 @@ function handleGlobal(cmd, rest) {
     case "howto":    return showTutorial();
     case "clear":    term.clear(); return true;
     case "status":   return showStatus();
+    case "team":     return setTeam(rest);
+    case "share":    return doShare();
     case "inventory":
     case "inv":      return showInventory();
     case "hint":     return giveHint();
@@ -200,7 +202,9 @@ function globalHelp() {
 `global commands:
   help              — show this list
   tutorial | how    — explain how the game works (read this first!)
-  status            — mission status
+  status            — mission status (with team share line for facilitator)
+  team <name>       — label your team (shown on status share)
+  share             — copy your status / final result link to clipboard
   inventory | inv   — list collected fragments
   hint              — request a hint (first free per level, then -5 pts)
   brief             — re-read the current level briefing
@@ -271,16 +275,96 @@ GETTING STARTED RIGHT NOW
 
 function showStatus() {
   const s = state.get();
+  const elapsed = elapsedString();
+  const team = s.teamName || "(unnamed)";
+  const lvl = s.level >= 5 ? "EXTRACTED" : `L${s.level || 0}`;
   term.printBlock(
-`mission   : OPERATION LIFELINE
-status    : ${s.completed.length === 4 ? "EXTRACTED" : "ACTIVE"}
+`team      : ${team}
+mission   : OPERATION LIFELINE
+status    : ${s.completed.length === 4 ? "EXTRACTED" : "ACTIVE — " + lvl}
 progress  : ${s.completed.length}/${state.totalLevels} levels
 score     : ${s.score}
+elapsed   : ${elapsed}
 hints     : ${s.hintsUsed}
 errors    : ${s.wrongAttempts}
 items     : ${s.inventory.length ? s.inventory.join(", ") : "(none)"}`,
     "dim"
   );
+  term.println("", "");
+  term.println("share line — paste this in Slack/Teams to update the facilitator:", "muted");
+  term.println("  " + buildShareLine(), "info");
+  if (!s.teamName) {
+    term.println("  (set a team name first: type 'team <name>')", "muted");
+  }
+  term.println("type 'share' to copy a facilitator URL to your clipboard.", "muted");
+  return true;
+}
+
+function setTeam(rest) {
+  const name = rest.join(" ").trim();
+  if (!name) {
+    const cur = state.get().teamName;
+    term.println(cur ? `team name: ${cur}` : "no team name set. usage: team <name>", "muted");
+    return true;
+  }
+  state.setTeamName(name);
+  term.println(`team name set: ${state.get().teamName}`, "accent");
+  return true;
+}
+
+function elapsedString() {
+  const s = state.get();
+  if (!s.containmentStart) return "—";
+  const endRef = s.extractedAt || Date.now();
+  const totalSec = Math.max(0, Math.floor((endRef - s.containmentStart) / 1000));
+  const m = Math.floor(totalSec / 60).toString().padStart(2, "0");
+  const ss = (totalSec % 60).toString().padStart(2, "0");
+  return `${m}:${ss}`;
+}
+
+function buildShareLine() {
+  const s = state.get();
+  const team = s.teamName || "UNNAMED";
+  const stage = s.completed.length === 4 ? "EXTRACTED" : `L${s.level || 0}`;
+  return `[BLACKOUT] TEAM ${team} · ${stage} · ${s.score} pts · ${elapsedString()} · ${s.hintsUsed} hints · ${s.wrongAttempts} errors`;
+}
+
+function buildStatusUrl() {
+  const s = state.get();
+  const elapsedSec = (() => {
+    if (!s.containmentStart) return 0;
+    const endRef = s.extractedAt || Date.now();
+    return Math.max(0, Math.floor((endRef - s.containmentStart) / 1000));
+  })();
+  const payload = {
+    team: s.teamName || "",
+    lvl: s.level,
+    completed: s.completed.length,
+    score: s.score,
+    elapsed: elapsedSec,
+    hints: s.hintsUsed,
+    errors: s.wrongAttempts,
+    extracted: !!s.extractedAt,
+    at: Date.now(),
+  };
+  const enc = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  return `${location.origin}${location.pathname}?status=${enc}`;
+}
+
+function doShare() {
+  const url = buildStatusUrl();
+  const line = buildShareLine();
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      term.println(`[ status URL copied to clipboard ✓ ]`, "accent");
+    }).catch(() => {
+      term.println("clipboard unavailable. copy manually:", "warn");
+    });
+  } else {
+    term.println("clipboard unavailable. copy manually:", "warn");
+  }
+  term.println("  " + url, "info");
+  term.println("share line: " + line, "muted");
   return true;
 }
 
@@ -344,6 +428,15 @@ async function boot() {
 
   term.setHandler(dispatch);
 
+  // Facilitator view: ?status=<base64> — render a single team's snapshot
+  // instead of starting the game. No backend, no infra — facilitators paste
+  // team URLs from chat into a tab.
+  const statusParam = new URLSearchParams(location.search).get("status");
+  if (statusParam) {
+    showFacilitatorView(statusParam);
+    return;
+  }
+
   const startAudioOnce = () => {
     startAmbient();
     updateHeartbeat();
@@ -363,6 +456,40 @@ async function boot() {
 
   const startLevel = state.get().level || 0;
   await runLevel(startLevel);
+}
+
+function showFacilitatorView(payload) {
+  let data;
+  try {
+    data = JSON.parse(decodeURIComponent(escape(atob(payload))));
+  } catch {
+    term.println("invalid status payload.", "danger");
+    term.println("expected URL form: ?status=<base64>", "muted");
+    return;
+  }
+  const m = Math.floor((data.elapsed || 0) / 60).toString().padStart(2, "0");
+  const ss = ((data.elapsed || 0) % 60).toString().padStart(2, "0");
+  const ageSec = Math.floor((Date.now() - (data.at || Date.now())) / 1000);
+  const ageStr = ageSec < 60 ? `${ageSec}s ago` : `${Math.floor(ageSec / 60)}m ${ageSec % 60}s ago`;
+  const stage = data.extracted ? "EXTRACTED" : `L${data.lvl} (${data.completed}/4 done)`;
+
+  term.println("", "");
+  term.println("=== FACILITATOR VIEW — TEAM SNAPSHOT ===", "system");
+  term.println("", "");
+  term.printBlock(
+`team       ${data.team || "(unnamed)"}
+stage      ${stage}
+score      ${data.score}
+elapsed    ${m}:${ss}
+hints      ${data.hints}
+errors     ${data.errors}
+
+snapshot taken ${ageStr}`,
+    "info"
+  );
+  term.println("", "");
+  term.println("→ open another team's link in a new tab to compare.", "muted");
+  term.println("→ or 'reset --confirm' + reload to start your own run.", "muted");
 }
 
 boot();
