@@ -95,14 +95,16 @@ export const ops = {
   _sectionFloor() {
     const roomEls = ROOMS.map((r) => {
       const cx = r.x + r.w / 2;
-      const cy = r.y + r.h / 2 + 1.2;
-      const cls = r.corridor ? "corridor-label" : "label";
       const rectCls = r.corridor ? "corridor" : "room";
+      const labels = r.corridor
+        ? `<text class="corridor-label" x="${cx}" y="${r.y + r.h/2 + 2}" text-anchor="middle">${r.label}</text>`
+        : `<text class="label" x="${cx}" y="${r.y + r.h/2 - 2}" text-anchor="middle">${r.id}</text>
+           <text class="label-sub" x="${cx}" y="${r.y + r.h/2 + 8}" text-anchor="middle">${r.label}</text>`;
       return `
         <rect class="${rectCls}" id="rm-${r.id}"
               x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}"
               ${r.corridor ? 'fill="transparent" stroke="rgba(95,169,127,0.18)" stroke-dasharray="2 2"' : ""} />
-        <text class="${cls}" x="${cx}" y="${cy}" text-anchor="middle">${r.id.startsWith("CORR") ? r.label : r.id + " " + r.label}</text>
+        ${labels}
       `;
     }).join("");
 

@@ -273,10 +273,15 @@ html, body {
 }
 .floorplan .label {
   fill: var(--hud); font-size: 7px; font-family: var(--mono); pointer-events: none;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em; font-weight: 600;
+}
+.floorplan .label-sub {
+  fill: var(--fg-dim); font-size: 5.5px; font-family: var(--mono); pointer-events: none;
+  letter-spacing: 0.04em; opacity: 0.85;
 }
 .floorplan .corridor-label {
-  fill: var(--fg-muted); font-size: 6px;
+  fill: var(--fg-muted); font-size: 5.5px; font-family: var(--mono);
+  pointer-events: none; letter-spacing: 0.06em; font-style: italic;
 }
 .floorplan .drone {
   fill: var(--accent); stroke: #fff; stroke-width: 0.5;
