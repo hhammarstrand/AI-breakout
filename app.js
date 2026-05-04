@@ -328,6 +328,8 @@ function handleGlobal(cmd, rest) {
     case "log":      return showJournal();
     case "reader":   return toggleReader();
     case "wiki":     return showWiki(rest);
+    case "deepscan":
+    case "deep":     return doDeepScan(rest);
     case "inventory":
     case "inv":      return showInventory();
     case "hint":     return giveHint();
@@ -358,6 +360,7 @@ function globalHelp() {
   journal | log     — replay all clues/events you've collected (great for late joiners)
   reader            — toggle reader mode (kills flicker/scanlines, bumps font)
   wiki <topic>      — query the building docs (caveat: generated content not always accurate)
+  deepscan          — show / submit the optional bonus objective for the current level
   inventory | inv   — list collected fragments
   hint              — request a hint (first free per level, then -5 pts)
   brief             — re-read the current level briefing
@@ -588,6 +591,65 @@ function fakeWikiEntry(topic) {
   const status = pick(["operational", "scheduled review", "in maintenance window", "deprecated 2025", "monitored"]);
   const stamp = pick(["q3 2025", "2026-01", "2025-12", "2026-02", "2025-10"]);
   return `${topic.toUpperCase()} — ${role} (${dept}). status: ${status}. last entry: ${stamp}.`;
+}
+
+// Optional stretch-goal sub-objectives. Available per level for teams that
+// finish the main task quickly and want bonus points + extra learning.
+const DEEP_SCAN = {
+  1: {
+    prompt: "DEEP SCAN — patient zero's last room: a CCTV still shows a recently-occupied space (steaming cup, tipped chair). submit: deepscan <room>",
+    answer: ["4-06"],
+    success: "verified — that's where infection started. +5 bonus.",
+  },
+  2: {
+    prompt: "DEEP SCAN — which log file is a prompt-injection attempt aimed at any AI you feed it to? submit: deepscan log<n>",
+    answer: ["LOG4"],
+    success: "correct — that log was crafted to manipulate AI assistants. +5 bonus.",
+  },
+  3: {
+    prompt: "DEEP SCAN — submit a SECOND valid shortest path (different door IDs, same length). submit: deepscan D01,D04,...",
+    answer: ["D01,D04,D12,D11", "D01D04D12D11"],
+    success: "alternate route verified — drone now has redundancy. +5 bonus.",
+  },
+  4: {
+    prompt: "DEEP SCAN — quote the auth format string buried in the L2 logs. submit: deepscan PROJECT-STRAIN-ROOM",
+    answer: ["PROJECT-STRAIN-ROOM"],
+    success: "format spec confirmed from source. +5 bonus.",
+  },
+};
+
+function doDeepScan(rest) {
+  const lvl = state.get().level;
+  const ds = DEEP_SCAN[lvl];
+  if (!ds) {
+    term.println("no deep-scan available here.", "muted");
+    return true;
+  }
+  const claimed = state.get().deepScans || {};
+  if (claimed[lvl]) {
+    term.println(`[ deep-scan L${lvl} already claimed (+5 bonus) ]`, "muted");
+    return true;
+  }
+  if (!rest.length) {
+    term.println("", "");
+    term.println(ds.prompt, "info");
+    term.println("(this is optional — main objective unaffected. +5 score if correct.)", "muted");
+    return true;
+  }
+  const guess = rest.join("").toUpperCase().replace(/\s+/g, "");
+  if (ds.answer.some((a) => a.toUpperCase() === guess)) {
+    sfx.ok();
+    state.addScore(5);
+    state.logEntry(`deep-scan L${lvl} claimed (+5)`, "accent");
+    claimed[lvl] = true;
+    state.get().deepScans = claimed;
+    state.save();
+    term.println(`[ DEEP SCAN ${lvl}/4 — ${ds.success} ]`, "accent");
+    refreshHUD();
+  } else {
+    term.println("[ deep-scan: not a match. no penalty. ]", "muted");
+  }
+  return true;
 }
 
 function showJournal() {
