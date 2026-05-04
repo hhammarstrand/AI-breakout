@@ -17,30 +17,106 @@ function ensureCtx() {
 
 function on() { return state.get().audio && ensureCtx(); }
 
+// Richer ambient: detuned drone-pad (beating sines) + filtered noise layer
+// (HVAC hiss with slow LFO on cutoff) + breathing tremolo on the drone.
+// Aim: warm, ominous, alive — not annoying.
 export function startAmbient() {
   if (!on() || ambientNode) return;
-  // low rumble + faint hum to suggest a server room
-  const rumble = ctx.createOscillator();
-  rumble.type = "sine";
-  rumble.frequency.value = 55;
-  const hum = ctx.createOscillator();
-  hum.type = "sawtooth";
-  hum.frequency.value = 110;
-  const lp = ctx.createBiquadFilter();
-  lp.type = "lowpass";
-  lp.frequency.value = 280;
+
+  // master gain so we can fade everything together
   ambientGain = ctx.createGain();
-  ambientGain.gain.value = 0.018;
-  rumble.connect(lp); hum.connect(lp); lp.connect(ambientGain);
+  ambientGain.gain.value = 0;
   ambientGain.connect(ctx.destination);
-  rumble.start(); hum.start();
-  ambientNode = { rumble, hum };
+  // smooth fade-in over ~3s
+  ambientGain.gain.linearRampToValueAtTime(1.0, ctx.currentTime + 3);
+
+  // ---- drone pad ----
+  // four sines, slightly detuned, through a soft lowpass
+  const droneLp = ctx.createBiquadFilter();
+  droneLp.type = "lowpass";
+  droneLp.frequency.value = 380;
+  droneLp.Q.value = 0.6;
+
+  const droneGain = ctx.createGain();
+  droneGain.gain.value = 0.038;
+
+  const droneOscs = [55, 55.4, 110.7, 165.3].map((f) => {
+    const o = ctx.createOscillator();
+    o.type = "sine";
+    o.frequency.value = f;
+    o.connect(droneLp);
+    o.start();
+    return o;
+  });
+  droneLp.connect(droneGain);
+  droneGain.connect(ambientGain);
+
+  // breathing tremolo on the drone gain (LFO ~0.13Hz, ±0.012 depth)
+  const tremolo = ctx.createOscillator();
+  tremolo.type = "sine";
+  tremolo.frequency.value = 0.13;
+  const tremoloDepth = ctx.createGain();
+  tremoloDepth.gain.value = 0.012;
+  tremolo.connect(tremoloDepth);
+  tremoloDepth.connect(droneGain.gain);
+  tremolo.start();
+
+  // ---- filtered noise (HVAC) ----
+  const noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+  const noiseData = noiseBuf.getChannelData(0);
+  for (let i = 0; i < noiseData.length; i++) noiseData[i] = (Math.random() * 2 - 1) * 0.5;
+  const noise = ctx.createBufferSource();
+  noise.buffer = noiseBuf;
+  noise.loop = true;
+
+  const noiseLp = ctx.createBiquadFilter();
+  noiseLp.type = "lowpass";
+  noiseLp.frequency.value = 520;
+  noiseLp.Q.value = 0.8;
+
+  const noiseHp = ctx.createBiquadFilter();
+  noiseHp.type = "highpass";
+  noiseHp.frequency.value = 90;
+
+  const noiseGain = ctx.createGain();
+  noiseGain.gain.value = 0.022;
+
+  noise.connect(noiseHp);
+  noiseHp.connect(noiseLp);
+  noiseLp.connect(noiseGain);
+  noiseGain.connect(ambientGain);
+  noise.start();
+
+  // slow LFO on noise filter cutoff so the "wind" breathes
+  const noiseLfo = ctx.createOscillator();
+  noiseLfo.type = "sine";
+  noiseLfo.frequency.value = 0.07;
+  const noiseLfoDepth = ctx.createGain();
+  noiseLfoDepth.gain.value = 180;
+  noiseLfo.connect(noiseLfoDepth);
+  noiseLfoDepth.connect(noiseLp.frequency);
+  noiseLfo.start();
+
+  ambientNode = { droneOscs, tremolo, noise, noiseLfo };
 }
 
 export function stopAmbient() {
   if (!ambientNode) return;
-  try { ambientNode.rumble.stop(); ambientNode.hum.stop(); } catch {}
+  // quick fade-out before stopping to avoid clicks
+  if (ambientGain) {
+    const now = ctx.currentTime;
+    ambientGain.gain.cancelScheduledValues(now);
+    ambientGain.gain.setValueAtTime(ambientGain.gain.value, now);
+    ambientGain.gain.linearRampToValueAtTime(0, now + 0.4);
+  }
+  const node = ambientNode;
   ambientNode = null;
+  setTimeout(() => {
+    try { node.droneOscs.forEach((o) => o.stop()); } catch {}
+    try { node.tremolo.stop(); } catch {}
+    try { node.noise.stop(); } catch {}
+    try { node.noiseLfo.stop(); } catch {}
+  }, 450);
 }
 
 export function refreshAudio() {
