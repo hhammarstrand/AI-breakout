@@ -127,8 +127,58 @@ let activeLevel = null;
 function setLabel() {
   const s = state.get();
   const stage = s.level >= 5 ? "extracted" : `lvl-${s.level || 0}`;
-  term.setLabel(`op@blackout:${stage}$`);
+  const host = s.osRebootDone ? "cdc-emergency" : "blackout";
+  term.setLabel(`op@${host}:${stage}$`);
 }
+
+// One-shot mid-game event at T+30:00 — primary channel "drops" and the
+// terminal switches to a CDC emergency-backup skin. Pure visual surprise:
+// changes accent palette + prompt label + drops a couple narrative lines.
+let osRebootScheduled = false;
+async function fireOsReboot() {
+  if (state.get().osRebootDone) return;
+  const cache = state.get();
+  cache.osRebootDone = true;
+  state.save();
+  state.logEntry("BMS link lost — switched to CDC emergency channel", "warn");
+
+  fireGlitch();
+  await sleepP(400);
+  term.println("", "");
+  term.println("[!] LINK TO HELIX-TOWER-BMS LOST", "danger");
+  term.println("[!] PRIMARY CHANNEL DEAD AT T+30:00", "danger");
+  await sleepP(700);
+  term.println("[ attempting failover ]", "warn");
+  await sleepP(400);
+  term.println("  reverse-relay handshake...", "muted");
+  await sleepP(450);
+  term.println("  CDC EMERGENCY-7 ack received", "muted");
+  await sleepP(450);
+  term.println("  switching channel: PARAPLY-BMS  →  CDC-EMERGENCY-7", "muted");
+  await sleepP(450);
+
+  if (ui.crt) ui.crt.classList.add("skin-cdc");
+  setLabel();
+
+  fireGlitch();
+  await sleepP(300);
+  term.println("[ now on CDC backup channel — non-Paraply oversight active ]", "system");
+  term.println("[ ops continues. all commands relayed. ]", "muted");
+}
+
+function checkOsReboot() {
+  const s = state.get();
+  if (s.osRebootDone) {
+    if (ui.crt) ui.crt.classList.add("skin-cdc");
+    return;
+  }
+  if (s.level <= 0 || s.level >= 5) return;
+  if (!s.containmentStart) return;
+  const elapsed = Date.now() - s.containmentStart;
+  if (elapsed >= 30 * 60 * 1000) fireOsReboot();
+}
+
+function sleepP(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 const ctx = {
   term,
@@ -608,8 +658,9 @@ async function boot() {
   document.addEventListener("keydown", startAudioOnce);
   document.addEventListener("click", startAudioOnce);
 
-  setInterval(() => { updateTimer(); updateHeartbeat(); }, 1000);
+  setInterval(() => { updateTimer(); updateHeartbeat(); checkOsReboot(); }, 1000);
   updateTimer();
+  checkOsReboot();
 
   atmosphere.start();
   scheduleAmbientPulse();

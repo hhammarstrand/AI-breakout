@@ -17,6 +17,7 @@ const initial = () => ({
   readerMode: false,   // accessibility: kills flicker/scanlines + bumps font
   teamName: null,      // optional team label for facilitator-friendly status share
   journal: [],         // [{ ts, kind, text }] auto-log of key events
+  osRebootDone: false, // BMS-→CDC mid-game skin switch (one-shot at T+30min)
   bestRun: null,       // { timeSec, score, hintsUsed, wrongAttempts, sig, at }
 });
 

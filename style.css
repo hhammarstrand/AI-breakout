@@ -73,6 +73,36 @@ html, body {
     radial-gradient(ellipse at center, rgba(8,40,28,0.7) 0%, var(--bg) 70%, #000 100%);
 }
 
+/* CDC emergency-channel skin — applied mid-game at T+30:00 when the
+   primary BMS link "drops". Shifts the palette to amber/orange and
+   re-tints headers and HUD. Pure cosmetic but creates a memorable beat. */
+.crt.skin-cdc {
+  --accent: #ffb255;
+  --fg: #ffd9a8;
+  --fg-dim: #c79055;
+  --fg-muted: #6b4d20;
+  --hud: #ffe6c2;
+  --paraply: #ffb255;
+  --info: #ffd28a;
+  background:
+    radial-gradient(ellipse at center, rgba(48,28,4,0.7) 0%, var(--bg) 70%, #000 100%);
+}
+.crt.skin-cdc .hud {
+  border-bottom-color: #6b4d20;
+  background: rgba(20,12,4,0.85);
+}
+.crt.skin-cdc .prompt-row {
+  border-top-color: #6b4d20;
+  background: rgba(20,12,4,0.85);
+}
+.crt.skin-cdc .ops-section { border-color: #6b4d20; }
+.crt.skin-cdc .ops-brand { border-color: var(--accent); }
+.crt.skin-cdc .ops-brand .brand,
+.crt.skin-cdc .ops-thermite-time {
+  color: var(--accent);
+  text-shadow: 0 0 8px rgba(255,178,85,0.5);
+}
+
 /* Reader mode — accessibility toggle. Kills flicker, hides scanlines/vignette,
    disables glitch overlays, bumps font. Use 'reader' command. */
 .crt.reader-mode {
