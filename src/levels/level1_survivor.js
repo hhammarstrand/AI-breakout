@@ -27,24 +27,27 @@ const FLOOR_4_PLAN = String.raw`
 const SENSORS = {
   // Each room: motion bursts/min, temperature C, CO2 ppm above ambient,
   // audio peaks dB above noise floor. Last 60s averaged.
-  // 4-04 and 4-08 are SURVIVOR DECOYS — elevated CO2 from non-living sources
-  // (gas leak, ventilation cross-flow). They appear "warm" on the floor plan
-  // alongside the real survivor, forcing players to use CCTV to disambiguate.
-  "4-01": { motion: 0,  temp: 22.1, co2: 0,   audio: 1,  notes: "dark, door closed" },
-  "4-02": { motion: 0,  temp: 22.0, co2: 0,   audio: 0,  notes: "dark" },
-  "4-03": { motion: 14, temp: 39.6, co2: 0,   audio: 38, notes: "door ajar, heat anomaly" },
-  "4-04": { motion: 0,  temp: 21.4, co2: 510, audio: 0,  notes: "elevated co2, source unclear" },
+  // 4-04, 4-08, 4-12 form a triple of survivor CANDIDATES whose profiles
+  // intentionally LOOK alike — sensors alone can't disambiguate. In fact
+  // 4-04's leaking gas cylinder pushes higher CO2 + more vibration than
+  // 4-12's breathing, so AI ranking by raw numbers picks the WRONG room.
+  // Only CCTV reveals which is real. Notes are kept observational, not
+  // interpretive, so AI can't shortcut from the table alone.
+  "4-01": { motion: 0,  temp: 22.1, co2: 0,   audio: 1,  notes: "—" },
+  "4-02": { motion: 0,  temp: 22.0, co2: 0,   audio: 0,  notes: "—" },
+  "4-03": { motion: 14, temp: 39.6, co2: 0,   audio: 38, notes: "—" },
+  "4-04": { motion: 3,  temp: 22.0, co2: 580, audio: 4,  notes: "—" },
   "4-05": { motion: 0,  temp: 22.0, co2: 0,   audio: 0,  notes: "—" },
-  "4-06": { motion: 1,  temp: 22.6, co2: 0,   audio: 2,  notes: "ventilation creak" },
-  "4-07": { motion: 22, temp: 40.1, co2: 0,   audio: 51, notes: "high heat, no breathing trace" },
-  "4-08": { motion: 0,  temp: 22.4, co2: 280, audio: 1,  notes: "door ajar, ventilation cross-flow" },
-  "4-09": { motion: 0,  temp: 22.0, co2: 0,   audio: 0,  notes: "dark" },
-  "4-10": { motion: 0,  temp: 22.2, co2: 0,   audio: 0,  notes: "dark" },
-  "4-11": { motion: 1,  temp: 23.4, co2: 0,   audio: 0,  notes: "patch panel humming" },
-  "4-12": { motion: 3,  temp: 24.9, co2: 740, audio: 9,  notes: "irregular motion bursts" },
-  "4-13": { motion: 0,  temp: 22.0, co2: 0,   audio: 1,  notes: "stairwell door closed" },
+  "4-06": { motion: 1,  temp: 22.6, co2: 0,   audio: 2,  notes: "—" },
+  "4-07": { motion: 22, temp: 40.1, co2: 0,   audio: 51, notes: "—" },
+  "4-08": { motion: 1,  temp: 22.4, co2: 410, audio: 2,  notes: "—" },
+  "4-09": { motion: 0,  temp: 22.0, co2: 0,   audio: 0,  notes: "—" },
+  "4-10": { motion: 0,  temp: 22.2, co2: 0,   audio: 0,  notes: "—" },
+  "4-11": { motion: 1,  temp: 23.4, co2: 0,   audio: 0,  notes: "—" },
+  "4-12": { motion: 2,  temp: 22.6, co2: 510, audio: 2,  notes: "—" },
+  "4-13": { motion: 0,  temp: 22.0, co2: 0,   audio: 1,  notes: "—" },
   "4-14": { motion: 0,  temp: 22.3, co2: 0,   audio: 0,  notes: "—" },
-  "4-15": { motion: 31, temp: 39.9, co2: 0,   audio: 62, notes: "containment door breached, heat surge" },
+  "4-15": { motion: 31, temp: 39.9, co2: 0,   audio: 62, notes: "—" },
 };
 
 const CCTV = {
