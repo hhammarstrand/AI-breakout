@@ -9,7 +9,7 @@
   --danger: #ff4f5e;
   --info: #7fbfff;
   --hud: #cfe6df;
-  --survivor: #69e0ff;
+  --survivor: #ff7ad9;
   --hot: #ff4f5e;
   --warm: #ffcd5b;
   --cold: #5fa97f;
@@ -132,10 +132,11 @@ html, body {
 .line.ascii { color: var(--accent); }
 .line.noise { color: var(--fg-muted); font-size: 13px; opacity: 0.78; }
 .line.survivor {
-  color: var(--survivor); font-weight: 500;
-  text-shadow: 0 0 6px rgba(105,224,255,0.55);
+  color: var(--survivor); font-weight: 600;
+  text-shadow: 0 0 8px rgba(255,122,217,0.65);
+  letter-spacing: 0.02em;
 }
-.line.survivor::before { content: "[K.N] "; color: var(--survivor); opacity: 0.85; }
+.line.survivor::before { content: "[DR. NORDLUND] "; color: var(--survivor); opacity: 0.95; font-weight: 700; }
 
 .line.glitch { animation: glitch 0.4s steps(4, end) 1; color: var(--danger); }
 @keyframes glitch {
