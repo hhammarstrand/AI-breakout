@@ -5,6 +5,7 @@ import { Terminal, parseCommand } from "./src/terminal.js";
 import { state } from "./src/state.js";
 import { sfx, refreshAudio, startAmbient, setHeartbeat } from "./src/audio.js";
 import { nextHint, registerHints, hintCount } from "./src/hints.js";
+import { registerPrompts, getPrompts } from "./src/prompts.js";
 import { ops } from "./src/opspanel.js";
 import { atmosphere } from "./src/atmosphere.js";
 
@@ -135,6 +136,7 @@ const ctx = {
   registerHints,
   nextHint,
   hintCount,
+  registerPrompts,
   go(n) { runLevel(n); },
   refreshHUD,
 };
@@ -180,6 +182,8 @@ function handleGlobal(cmd, rest) {
     case "status":   return showStatus();
     case "team":     return setTeam(rest);
     case "share":    return doShare();
+    case "prompts":
+    case "prompt":   return showPrompts();
     case "inventory":
     case "inv":      return showInventory();
     case "hint":     return giveHint();
@@ -205,6 +209,7 @@ function globalHelp() {
   status            — mission status (with team share line for facilitator)
   team <name>       — label your team (shown on status share)
   share             — copy your status / final result link to clipboard
+  prompts           — show vetted starter prompts for the current level's AI work
   inventory | inv   — list collected fragments
   hint              — request a hint (first free per level, then -5 pts)
   brief             — re-read the current level briefing
@@ -349,6 +354,26 @@ function buildStatusUrl() {
   };
   const enc = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
   return `${location.origin}${location.pathname}?status=${enc}`;
+}
+
+function showPrompts() {
+  const lvl = state.get().level;
+  const prompts = getPrompts(lvl);
+  if (!prompts || !prompts.length) {
+    term.println("no starter prompts for this level.", "muted");
+    return true;
+  }
+  term.println("", "");
+  term.println(`=== STARTER PROMPTS — L${lvl} ===`, "system");
+  term.println("paste any of these into Claude / Copilot / Gemini as a starting point.", "muted");
+  term.println("good prompts are specific: role + context + concrete data + the exact output you want.", "muted");
+  term.println("", "");
+  prompts.forEach((p, i) => {
+    term.println(`[${i + 1}] ${p.title}`, "accent");
+    p.body.split("\n").forEach((line) => term.println("    " + line, "info"));
+    term.println("", "");
+  });
+  return true;
 }
 
 function doShare() {

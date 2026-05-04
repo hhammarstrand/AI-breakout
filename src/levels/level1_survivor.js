@@ -84,6 +84,50 @@ export const level1 = {
       method: "Hostiles share three signals: temp ≥ 38°C + motion ≥ 14 bursts/min + audio ≥ 38 dB. Survivor candidate: cool room with low motion AND elevated CO2. Run 'cctv <id>' on every candidate to verify.",
       answer: "Survivor: 4-12 (server room — green emergency tag visible). Hostiles: 4-03, 4-07, 4-15.",
     });
+    ctx.registerPrompts(1, [
+      {
+        title: "Classify rooms from sensor data",
+        body:
+`I have 15 rooms on a research-floor with sensor readings — motion bursts/min,
+temperature (C), CO2 increase above ambient (ppm), audio peaks (dB).
+
+ONE room hides a single living person (low motion, cool, elevated CO2 from
+breathing). THREE rooms contain hostile entities (very high temp, very high
+motion, very high audio, no breathing).
+
+Build a scoring rule and rank each room. Output: a table with each room's
+likely status (survivor / hostile / empty) and the criterion that triggered
+that label.
+
+DATA:
+[paste 'sensors 4' output here]`,
+      },
+      {
+        title: "Interpret a single CCTV description",
+        body:
+`Below is a text description from a CCTV still in a research building.
+Tell me whether the subject is (a) alive and conscious, (b) infected/hostile,
+(c) recently dead, or (d) empty room. Quote the specific words that justify
+your call.
+
+DESCRIPTION:
+[paste 'cctv 4-XX' output here]`,
+      },
+      {
+        title: "Disambiguate multiple survivor candidates",
+        body:
+`I have several rooms whose sensor readings look survivor-like (elevated CO2,
+low motion, cool temperature). I also have CCTV descriptions for each.
+Determine which room actually contains a single conscious survivor — the
+others may be empty rooms with residual CO2, gas leaks, or recent corpses.
+
+CANDIDATES (sensors + CCTV):
+[paste rows from 'sensors 4' for the candidate rooms]
+[paste 'cctv' output for each candidate]
+
+Output: one room ID + a 2-sentence justification.`,
+      },
+    ]);
     this.registered = true;
   },
 

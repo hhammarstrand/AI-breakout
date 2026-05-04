@@ -89,6 +89,43 @@ export const level3 = {
       method: "Ask AI to write BFS in Python or JS. PRE-FILTER the door list: drop locked doors AND drop edges that touch hostile rooms. BFS from 4-12 to ROOF, reconstruct the door IDs from parent pointers. RUN the script — don't trust manual tracing.",
       answer: "Build adjacency from non-locked doors that don't touch any hostile room. BFS from 4-12 to ROOF. Optimal path is 4 doors via the east stairwell.",
     });
+    ctx.registerPrompts(3, [
+      {
+        title: "Generate a BFS shortest-path script",
+        body:
+`Write a small Python program that:
+  1. Reads a list of doors, each with { id, a, b, locked }
+  2. Reads a list of HOSTILE room IDs
+  3. Builds an undirected graph from NON-locked doors, EXCLUDING any door
+     whose endpoint is a hostile room (hostile rooms cannot be entered)
+  4. BFS from start='4-12' to goal='ROOF'
+  5. Prints the door ID sequence as comma-separated values
+
+Keep it under 40 lines. Self-contained. Show me the full code.
+
+DOORS:
+[paste 'doors' output here]
+
+HOSTILE:
+[paste 'hostile' output here]`,
+      },
+      {
+        title: "Verify a candidate door sequence",
+        body:
+`Verify this door sequence step by step:
+  - starts at 4-12
+  - ends at ROOF
+  - never uses a locked door
+  - never enters a hostile room (hostile = 4-03, 4-07, 4-15)
+  - is the SHORTEST possible (no redundant doors)
+
+For each door in order, state which rooms it connects, whether it's legal,
+and the room you end up in. If any rule is violated, identify the door.
+
+DOORS:    [paste 'doors' output]
+SEQUENCE: [paste your candidate, e.g. D01, D02, D10, D11]`,
+      },
+    ]);
     this.registered = true;
   },
 
