@@ -14,6 +14,7 @@ const initial = () => ({
   containmentStart: null, // ms epoch — when 60-min timer started
   extractedAt: null,   // ms epoch — when player reached outro (freezes timer)
   audio: true,
+  bestRun: null,       // { timeSec, score, hintsUsed, wrongAttempts, sig, at }
 });
 
 let cache = null;
@@ -76,4 +77,18 @@ export const state = {
   },
 
   toggleAudio() { cache.audio = !cache.audio; this.save(); return cache.audio; },
+
+  // Record a completed run; updates bestRun if it beats the previous one.
+  // Returns { isBest, previous } so the UI can display "NEW PERSONAL BEST".
+  recordRun(run) {
+    const previous = cache.bestRun;
+    const isBest = !previous
+      || run.score > previous.score
+      || (run.score === previous.score && run.timeSec < previous.timeSec);
+    if (isBest) {
+      cache.bestRun = { ...run, at: Date.now() };
+      this.save();
+    }
+    return { isBest, previous };
+  },
 };

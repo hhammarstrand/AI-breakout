@@ -1,19 +1,19 @@
 :root {
   --bg: #04080a;
   --bg-tint: #061218;
-  --fg: #b8ffd0;
-  --fg-dim: #5fa97f;
-  --fg-muted: #2f5d49;
-  --accent: #6cf0c2;
-  --warn: #ffcd5b;
-  --danger: #ff4f5e;
-  --info: #7fbfff;
-  --hud: #cfe6df;
-  --survivor: #ff7ad9;
-  --hot: #ff4f5e;
-  --warm: #ffcd5b;
-  --cold: #5fa97f;
-  --paraply: #ff5a5a;
+  --fg: #d6ffe6;
+  --fg-dim: #95d4ad;
+  --fg-muted: #7ab098;
+  --accent: #7df2cb;
+  --warn: #ffd676;
+  --danger: #ff7080;
+  --info: #9bcdff;
+  --hud: #e3efea;
+  --survivor: #ff8de1;
+  --hot: #ff7080;
+  --warm: #ffd676;
+  --cold: #95d4ad;
+  --paraply: #ff7575;
   --mono: "IBM Plex Mono", "JetBrains Mono", "Fira Code", "Courier New", monospace;
 }
 
@@ -92,13 +92,13 @@ html, body {
   background: repeating-linear-gradient(
     to bottom,
     rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px,
-    rgba(0,0,0,0.18) 3px, rgba(0,0,0,0) 4px);
+    rgba(0,0,0,0.09) 3px, rgba(0,0,0,0) 4px);
   mix-blend-mode: multiply;
 }
 
 .vignette {
   position: absolute; inset: 0; pointer-events: none; z-index: 4;
-  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.7) 100%);
+  background: radial-gradient(ellipse at center, transparent 75%, rgba(0,0,0,0.5) 100%);
 }
 
 .glitch-overlay {
