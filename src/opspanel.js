@@ -2,6 +2,8 @@
 // coloring, drone/survivor/thermite modules. Each level toggles relevant
 // sections via setMode().
 
+import { buildingView } from "./buildingview.js";
+
 const ROOMS = [
   { id: "4-01", x:   0, y:  0, w: 44, h: 32, label: "OFFICE" },
   { id: "4-02", x:  44, y:  0, w: 44, h: 32, label: "OFFICE" },
@@ -77,11 +79,14 @@ export const ops = {
         </div>
       </div>
 
+      <div id="building-mount"></div>
       ${this._sectionFloor()}
       ${this._sectionVitals()}
       ${this._sectionDrone()}
       ${this._sectionThermite()}
     `;
+    const bm = panelEl.querySelector("#building-mount");
+    if (bm) buildingView.mount(bm);
     floorSvg = panelEl.querySelector(".floorplan");
     droneEl = panelEl.querySelector(".drone");
     this._applyDronePos();
@@ -89,6 +94,8 @@ export const ops = {
     this.updateSurvivor(survivor);
     this.updateDrone(droneState);
   },
+
+  pulseBuilding() { buildingView.pulse(); },
 
   // ============== floor plan ==============
 

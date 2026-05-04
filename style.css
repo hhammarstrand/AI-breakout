@@ -356,6 +356,21 @@ html, body {
 }
 .floorplan .radar-sweep { mix-blend-mode: screen; }
 
+.ops-building .building-canvas {
+  width: 100%; height: 200px; display: block;
+  background:
+    radial-gradient(ellipse at center, rgba(8,18,16,0.9) 0%, rgba(0,0,0,0.95) 100%);
+  border: 1px solid var(--fg-muted);
+  image-rendering: crisp-edges;
+}
+.building-meta {
+  display: flex; justify-content: space-between;
+  margin-top: 4px; font-size: 9px; color: var(--fg-muted);
+  letter-spacing: 0.08em;
+}
+.building-meta .hf { color: var(--paraply); font-weight: 700; }
+.building-coords { font-style: italic; opacity: 0.7; }
+
 .ops-legend {
   display: flex; flex-wrap: wrap; gap: 4px 10px;
   margin-top: 6px; font-size: 9px;
