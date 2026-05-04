@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BLACKOUT // Operation Lifeline</title>
+  <style>
+    /* visible-without-JS fallback so users don't see a black screen
+       if they opened the page via file:// (modules blocked) */
+    #boot-fallback { color: #5fa97f; }
+  </style>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="crt">
+    <div class="scanlines" aria-hidden="true"></div>
+    <div class="vignette" aria-hidden="true"></div>
+
+    <header class="hud">
+      <span class="hud-label">BLACKOUT</span>
+      <span class="hud-sep">|</span>
+      <span class="hud-label">OP <span id="hud-mission">— LIFELINE —</span></span>
+      <span class="hud-sep">|</span>
+      <span class="hud-label">PROGRESS <span id="hud-progress">0/4</span></span>
+      <span class="hud-sep">|</span>
+      <span class="hud-label">SCORE <span id="hud-score">0</span></span>
+      <span class="hud-sep">|</span>
+      <span class="hud-label">CONTAINMENT <span id="hud-timer">60:00</span></span>
+      <button id="audio-toggle" class="hud-btn" type="button" title="Toggle audio">SFX ON</button>
+    </header>
+
+    <main id="terminal" class="terminal" aria-live="polite">
+      <div id="boot-fallback" class="line dim">
+booting...
+
+if this text doesn't disappear in a moment, you likely opened
+index.html via file:// — modern browsers block ES modules there.
+
+run a local server from the project folder, then refresh:
+
+  python3 -m http.server 8000
+  → http://localhost:8000
+
+or any other static server (npx serve, caddy, etc).
+      </div>
+    </main>
+
+    <form id="prompt-form" class="prompt-row" autocomplete="off">
+      <span id="prompt-label" class="prompt-label">op@blackout:~$</span>
+      <input id="prompt-input" class="prompt-input" type="text" spellcheck="false"
+             autocapitalize="off" autocomplete="off" aria-label="terminal input" />
+    </form>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

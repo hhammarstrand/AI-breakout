@@ -1,0 +1,219 @@
+// Level 1: Locate the survivor on floor 4.
+// Players use sensor data + CCTV stills (text descriptions) to identify
+// the survivor's room and 3 hostile rooms.
+
+const FLOOR_4_PLAN = String.raw`
+  HELIX TOWER  :  FLOOR 4 — RESEARCH WING
+
+  +---------+---------+---------+---------+---------+
+  |  4-01   |  4-02   |  4-03 ! |  4-04   |  4-05   |
+  |  Office |  Office |  Lab A  |  Storage|  Office |
+  +---------+----+----+----+----+---------+---------+
+  |  4-06        | corridor west|  4-07 ! |  4-08   |
+  |  Conference  |              |  Lab B  |  Office |
+  +---------+----+----+----+----+----+----+----+----+
+  |  4-09   |  4-10   |  4-11   |  4-12   |  4-13   |
+  |  Office |  Office | Comms   | Server  |  Office |
+  +---------+---------+---------+---------+---------+
+  |  4-14         corridor east           |  4-15 ! |
+  |                                       |  Bio-3  |
+  +---------------------------------------+---------+
+
+  ! = high-priority area    Stairwells: 4-01 / 4-13   Elevators: 4-06 / 4-12
+`;
+
+const SENSORS = {
+  // Each room: motion bursts/min, temperature C, CO2 ppm above ambient,
+  // audio peaks dB above noise floor. Last 60s averaged.
+  "4-01": { motion: 0,  temp: 22.1, co2: 0,   audio: 1,  notes: "dark, door closed" },
+  "4-02": { motion: 0,  temp: 22.0, co2: 0,   audio: 0,  notes: "dark" },
+  "4-03": { motion: 14, temp: 39.6, co2: 0,   audio: 38, notes: "door ajar, heat anomaly" },
+  "4-04": { motion: 0,  temp: 21.4, co2: 0,   audio: 0,  notes: "—" },
+  "4-05": { motion: 0,  temp: 22.0, co2: 0,   audio: 0,  notes: "—" },
+  "4-06": { motion: 1,  temp: 22.6, co2: 0,   audio: 2,  notes: "ventilation creak" },
+  "4-07": { motion: 22, temp: 40.1, co2: 0,   audio: 51, notes: "high heat, no breathing trace" },
+  "4-08": { motion: 0,  temp: 22.1, co2: 0,   audio: 0,  notes: "dark" },
+  "4-09": { motion: 0,  temp: 22.0, co2: 0,   audio: 0,  notes: "dark" },
+  "4-10": { motion: 0,  temp: 22.2, co2: 0,   audio: 0,  notes: "dark" },
+  "4-11": { motion: 1,  temp: 23.4, co2: 0,   audio: 0,  notes: "patch panel humming" },
+  "4-12": { motion: 3,  temp: 24.9, co2: 740, audio: 9,  notes: "irregular motion bursts" },
+  "4-13": { motion: 0,  temp: 22.0, co2: 0,   audio: 1,  notes: "stairwell door closed" },
+  "4-14": { motion: 0,  temp: 22.3, co2: 0,   audio: 0,  notes: "—" },
+  "4-15": { motion: 31, temp: 39.9, co2: 0,   audio: 62, notes: "containment door breached, heat surge" },
+};
+
+const CCTV = {
+  "4-03": "image: thermal overlay, near-white silhouette pacing in tight loop. no exhalation plume detected. one hand drags along the wall. uniform: aegis lab coat, torn.",
+  "4-07": "image: lab bench overturned. fluid pooled. silhouette crouched over a second silhouette. no movement of chest cavity on either subject. ambient chitter audible — believed to be relay clicks.",
+  "4-11": "image: comms patch room. cold. no occupants. one rack flashing AMBER on uplink-3.",
+  "4-12": "image: server room. low light. visible occupant: small frame, breathing rate 14/min, slumped against rack 7. left hand pressed to neck (likely wound or radio). right hand holds emergency tag glowing green.",
+  "4-15": "image: bio-3 vault. door panel showing 'BREACH'. silhouette inside walking into walls. heat plume visible. no organized motion.",
+  "4-06": "image: conference room. empty. coffee cup on table, still steaming faintly. chair tipped over.",
+};
+
+const ROOMS = Object.keys(SENSORS);
+const SURVIVOR = "4-12";
+const HOSTILES = new Set(["4-03", "4-07", "4-15"]);
+
+let marks = { survivor: null, hostile: new Set() };
+let briefedOnce = false;
+
+function fmtRow(id, s) {
+  return ` ${id}  motion=${String(s.motion).padStart(2)}/min` +
+         `  temp=${s.temp.toFixed(1)}C` +
+         `  co2=+${String(s.co2).padStart(4)}ppm` +
+         `  audio=${String(s.audio).padStart(2)}dB  | ${s.notes}`;
+}
+
+export const level1 = {
+  registered: false,
+  registerHints(ctx) {
+    if (this.registered) return;
+    ctx.registerHints(1, [
+      "She has the only emergency tag. Tags broadcast over uplink — but you have CCTV too. Cross-reference both.",
+      "A living person produces CO2. The infected don't breathe. Scan the sensor table for that signal.",
+      "Hostiles run hot (38-41C) and noisy. The survivor is in a cool room with low motion bursts and elevated CO2.",
+    ]);
+    this.registered = true;
+  },
+
+  async start(ctx) {
+    const { term, sfx, state } = ctx;
+    this.registerHints(ctx);
+    sfx.save();
+    term.println("", "");
+    term.println("=== L1  LOCATE THE SURVIVOR ===", "system");
+    term.println("", "");
+    if (!briefedOnce) {
+      term.printBlock(
+`Dr. Nordlund's emergency tag is broadcasting from somewhere on floor 4.
+The building is dark. You have access to floor sensors and CCTV stills.
+Some rooms are hot. Some rooms are wrong.
+
+Find her — and tell us which rooms NOT to send the rescue drone through.
+
+Open this AI sidebar and paste the data into Claude / Copilot / Gemini:
+  - sensors 4
+  - cctv <id>     (try the ones the floor plan flags with !)
+  - plan 4        (ASCII floor plan)
+
+When you're sure: 'mark survivor 4-XX' and 'mark hostile 4-XX' for each
+of the THREE infected rooms. Then 'commit' to verify.
+
+Commands: plan / sensors / cctv / mark / unmark / marks / commit / brief / hint`,
+        "info"
+      );
+      briefedOnce = true;
+    } else {
+      term.println("brief reissued. type 'plan 4' to begin.", "muted");
+    }
+  },
+
+  onCommand(cmd, args, raw, ctx) {
+    const { term, sfx, state } = ctx;
+    switch (cmd) {
+      case "brief": return this.start(ctx);
+      case "plan":
+      case "floor": {
+        const f = args[0] || "4";
+        if (f !== "4") {
+          term.println(`floor ${f}: power offline, plan unavailable.`, "muted");
+          return;
+        }
+        term.printBlock(FLOOR_4_PLAN, "ascii");
+        return;
+      }
+      case "sensors": {
+        const f = args[0] || "4";
+        if (f !== "4") {
+          term.println(`sensors floor ${f}: feed dropped.`, "muted");
+          return;
+        }
+        term.println("FLOOR 4 — sensor digest (60s avg):", "dim");
+        ROOMS.forEach((id) => term.println(fmtRow(id, SENSORS[id]), "dim"));
+        return;
+      }
+      case "cctv": {
+        const id = (args[0] || "").toUpperCase().replace(/[^0-9-]/g, "").toLowerCase();
+        const key = id.startsWith("4-") ? id : "4-" + id.replace(/^0+/, "").padStart(2, "0");
+        if (!CCTV[key]) {
+          term.println(`cctv ${key}: feed offline or no camera in that room.`, "muted");
+          return;
+        }
+        term.println(`CCTV ${key}:`, "dim");
+        term.println("  " + CCTV[key], "info");
+        return;
+      }
+      case "mark": {
+        const what = (args[0] || "").toLowerCase();
+        const room = normRoom(args[1]);
+        if (!room || !SENSORS[room]) {
+          term.println("usage: mark survivor 4-XX  |  mark hostile 4-XX", "muted");
+          return;
+        }
+        if (what === "survivor") {
+          marks.survivor = room;
+          term.println(`marked survivor → ${room}`, "accent");
+        } else if (what === "hostile") {
+          marks.hostile.add(room);
+          term.println(`marked hostile → ${room}`, "warn");
+        } else {
+          term.println("usage: mark survivor 4-XX  |  mark hostile 4-XX", "muted");
+        }
+        return;
+      }
+      case "unmark": {
+        const room = normRoom(args[0]);
+        if (!room) { term.println("usage: unmark 4-XX", "muted"); return; }
+        if (marks.survivor === room) marks.survivor = null;
+        marks.hostile.delete(room);
+        term.println(`cleared marks for ${room}`, "muted");
+        return;
+      }
+      case "marks": {
+        term.println(`survivor: ${marks.survivor || "(none)"}`, "dim");
+        term.println(`hostile : ${[...marks.hostile].join(", ") || "(none)"}`, "dim");
+        return;
+      }
+      case "commit": {
+        if (!marks.survivor || marks.hostile.size < 3) {
+          term.println("need 1 survivor mark and 3 hostile marks before commit.", "warn");
+          return;
+        }
+        const survivorOk = marks.survivor === SURVIVOR;
+        const setEqual = marks.hostile.size === HOSTILES.size &&
+          [...marks.hostile].every((r) => HOSTILES.has(r));
+        if (survivorOk && setEqual) {
+          sfx.ok();
+          state.addScore(25);
+          state.addItem("ECHO-12");
+          state.completeLevel(1);
+          term.println("", "");
+          term.println("[ MATCH. Drone dispatched. Tag confirmed. ]", "accent");
+          term.println("  fragment acquired: ECHO-12", "accent");
+          term.println("  +25 score", "muted");
+          ctx.refreshHUD();
+          ctx.go(2);
+          return;
+        }
+        sfx.nope();
+        state.get().wrongAttempts++;
+        state.addScore(-2);
+        state.save();
+        term.println("[ no match. drone aborted. -2 score. ]", "danger");
+        if (!survivorOk) term.println("  survivor location seems wrong.", "warn");
+        if (!setEqual)   term.println("  hostile set incorrect — review sensor anomalies.", "warn");
+        return;
+      }
+      default:
+        term.println(`unknown: ${cmd}. try: plan 4, sensors 4, cctv 4-XX, mark, commit.`, "muted");
+    }
+  },
+};
+
+function normRoom(s) {
+  if (!s) return null;
+  const m = String(s).toLowerCase().match(/^4-?(\d{1,2})$/);
+  if (!m) return null;
+  return "4-" + m[1].padStart(2, "0");
+}
