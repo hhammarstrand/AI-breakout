@@ -21,8 +21,8 @@ i think she is right. the question is whether anything else gets eaten.
     enc: "base64",
     title: "lab-log-2026-02-02.eml",
     body:
-`from: k.nordlund@aegis-bio.example
-to: ops@aegis-bio.example
+`from: k.nordlund@paraply-bio.example
+to: ops@paraply-bio.example
 re: AEGIS containment notice
 
 board approved a class-iv trial in the helix tower bio-3 vault.
@@ -84,18 +84,31 @@ export const level2 = {
     term.println("=== L2  DECRYPT THE LAB LOGS ===", "system");
     term.println("", "");
     term.printBlock(
-`Three logs were exfiltrated from Dr. Nordlund's machine before the firmware
-wipe. Each is encoded differently. The cipher type is shown next to the
-log title.
+`Three log files were exfiltrated from Dr. Nordlund's machine before the
+firmware wipe. Each is encoded with a DIFFERENT cipher.
 
-Read them, decrypt them with AI's help, and identify the shared project
-codename. The codename is the one word that appears, in plaintext, in all
-three decoded files.
+YOUR JOB
+  • read all three logs
+  • decrypt each with AI's help (paste ciphertext + cipher type into Claude)
+  • find the project codename that appears in ALL THREE decoded files
 
-Commands: archive / read <id> / submit <word> / brief / hint`,
+USE AI — paste the ciphertext into Claude / Copilot / Gemini and ask:
+  "decrypt this <cipher type>: <paste ciphertext>"
+
+Commands here:
+  archive       — list all 3 logs with their cipher types
+  read log1     — show log content (also: read log2, read log3)
+  submit AEGIS  — submit your guess at the codename
+  brief / hint`,
       "info"
     );
-    listed = false;
+    // auto-list the archive so the player sees cipher types immediately
+    term.println("", "");
+    term.println("recovered logs:", "dim");
+    for (const [id, l] of Object.entries(LOGS)) {
+      term.println(`  ${id}   ${l.title.padEnd(28)}  cipher: ${l.enc}${l.key ? " (key=" + l.key + ")" : ""}`, "dim");
+    }
+    listed = true;
   },
 
   onCommand(cmd, args, raw, ctx) {

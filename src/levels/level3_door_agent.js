@@ -74,7 +74,7 @@ adjacent rooms from start to goal without:
   - entering any 'hostile' room
 
 return: the SHORTEST such sequence (fewest doors).
-on tie, prefer doors with the lex-smallest id.
+ANY shortest valid path is accepted.
 
 submit by typing:    agent D01,D02,D11
 (comma or space-separated, case-insensitive)
@@ -102,15 +102,26 @@ export const level3 = {
     term.println("=== L3  BUILD THE DOOR AGENT ===", "system");
     term.println("", "");
     term.printBlock(
-`The drone has the survivor in the server room (4-12). It needs a safe
-path to the rooftop (ROOF) where extraction will land.
+`Drone has the survivor in the server room (4-12). It needs a safe path
+to the rooftop (ROOF) where extraction will land.
 
-Some doors are locked. Some rooms are hostile and cannot be entered.
+THE GRAPH PROBLEM
+  • doors connect rooms (you'll get the list with 'doors')
+  • LOCKED doors cannot be used
+  • HOSTILE rooms (4-03, 4-07, 4-15) cannot be entered AT ALL —
+    even passing through them is fatal
+  • find the SHORTEST sequence of doors from 4-12 to ROOF
 
-Write a small script (Python / JS / pseudo-code — use your AI) that finds
-the shortest safe door sequence. Submit your script's output.
+USE AI — paste the door list + hostile list into Claude, ask it to
+write a BFS or Dijkstra in Python/JS that prints the door sequence.
+Run the script (in Claude's tool, or your own terminal), copy output.
 
-Commands: spec / doors / hostile / agent <seq> / brief / hint`,
+Commands here:
+  spec       — full problem spec
+  doors      — door list as JSON (paste into AI)
+  hostile    — list of hostile rooms (paste into AI)
+  agent D01,D02,...   — submit your door sequence
+  brief / hint`,
       "info"
     );
     term.printBlock(SPEC, "muted");

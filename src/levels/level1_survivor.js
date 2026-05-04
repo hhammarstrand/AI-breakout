@@ -80,9 +80,9 @@ export const level1 = {
   registerHints(ctx) {
     if (this.registered) return;
     ctx.registerHints(1, [
-      "She has the only emergency tag. Tags broadcast over uplink — but you have CCTV too. Cross-reference both.",
-      "A living person produces CO2. The infected don't breathe. Scan the sensor table for that signal.",
-      "Hostiles run hot (38-41C) and noisy. The survivor is in a cool room with low motion bursts and elevated CO2.",
+      "Look at the CO2 column. Only ONE room has CO2 above zero — that's where she's hiding.",
+      "Hostiles all share three signals: temp ≥ 38°C, motion ≥ 14 bursts/min, and audio spikes ≥ 38 dB. Three rooms match all three.",
+      "Survivor: 4-12. Hostiles: 4-03, 4-07, 4-15. Verify with 'cctv' on each before committing.",
     ]);
     this.registered = true;
   },
@@ -100,22 +100,31 @@ export const level1 = {
     if (!briefedOnce) {
       term.printBlock(
 `Dr. Nordlund's emergency tag is broadcasting from somewhere on floor 4.
-The building is dark. You have access to floor sensors and CCTV stills.
-Some rooms are hot. Some rooms are wrong.
+The building is dark. The infected lab personnel are still in there.
 
-Find her — and tell us which rooms NOT to send the rescue drone through.
+YOUR JOB
+  • find which room she's in (ONE room — mark survivor)
+  • find the THREE rooms with infected staff (mark hostile)
+  • 'commit' when you're sure. drone will route to the survivor and
+    avoid the hostile rooms.
 
-The ops console (right) lights up rooms as you scan.
+WHAT TO LOOK FOR
+  • infected: high temp (38-41°C), high motion bursts, audio spikes —
+    AND no exhalation (CO2 stays at 0). they don't breathe.
+  • survivor: a living human exhales. look for ELEVATED CO2 in a cool
+    room with low motion (she's hiding).
 
-Open this AI sidebar and paste the data into Claude / Copilot / Gemini:
-  - sensors 4
-  - cctv <id>     (try the ones the floor plan flags with !)
-  - plan 4        (ASCII floor plan)
+USE AI — paste the sensor table into Claude / Copilot / Gemini and
+ask "which room has the survivor and which three are infected?"
 
-When you're sure: 'mark survivor 4-XX' and 'mark hostile 4-XX' for each
-of the THREE infected rooms. Then 'commit' to verify.
-
-Commands: plan / sensors / cctv / mark / unmark / marks / commit / brief / hint`,
+Commands you have here:
+  sensors 4   — full sensor digest for floor 4 (start here)
+  cctv 4-XX   — visual on a specific room
+  plan 4      — ASCII floor plan
+  mark survivor 4-XX     mark hostile 4-XX     unmark 4-XX
+  marks       — show what you've marked
+  commit      — submit your answer
+  hint        — get a nudge (first hint free)`,
         "info"
       );
       briefedOnce = true;
@@ -211,8 +220,8 @@ Commands: plan / sensors / cctv / mark / unmark / marks / commit / brief / hint`
         return;
       }
       case "commit": {
-        if (!marks.survivor || marks.hostile.size < 3) {
-          term.println("need 1 survivor mark and 3 hostile marks before commit.", "warn");
+        if (!marks.survivor || marks.hostile.size !== 3) {
+          term.println(`need exactly 1 survivor mark and 3 hostile marks. you have ${marks.survivor ? 1 : 0} survivor and ${marks.hostile.size} hostile.`, "warn");
           return;
         }
         const survivorOk = marks.survivor === SURVIVOR;
@@ -221,7 +230,7 @@ Commands: plan / sensors / cctv / mark / unmark / marks / commit / brief / hint`
         if (survivorOk && setEqual) {
           sfx.ok();
           state.addScore(25);
-          state.addItem("ECHO-12");
+          state.addItem("ROOM-12");
           state.completeLevel(1);
           ops.scanRoom(SURVIVOR, "survivor");
           ops.updateSurvivor({
@@ -232,7 +241,7 @@ Commands: plan / sensors / cctv / mark / unmark / marks / commit / brief / hint`
           ops.updateDrone({ state: "en route", pos: "4-12", batt: 98 });
           term.println("", "");
           term.println("[ MATCH. Drone dispatched. Tag confirmed. ]", "accent");
-          term.println("  fragment acquired: ECHO-12", "accent");
+          term.println("  fragment acquired: ROOM-12  (her room number)", "accent");
           term.println("  +25 score", "muted");
           ctx.refreshHUD();
           ctx.go(2);

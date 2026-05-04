@@ -22,9 +22,9 @@ export const level4 = {
   registerHints(ctx) {
     if (this.registered) return;
     ctx.registerHints(4, [
-      "Open your inventory. Three of the four pieces of the auth code are already in there.",
-      "The morse plays the missing piece — a strain ID from Dr. Nordlund's logs.",
-      "The auth format is: <codename>-<strain>-<room>. Hyphens between, all caps.",
+      "Open your inventory. Two of the three auth pieces are sitting in there: the codename from L2, and the room number from L1 (look at the ROOM-XX fragment).",
+      "The third piece comes from the radio — short and long pulses are MORSE. Decode it with AI. It's a strain ID you saw in lab-log-2026-01-14 (log1 from L2).",
+      "The auth format is: <codename>-<strain>-<room>. Hyphens between, all caps. Example shape: WORD-WORD-NUMBER",
     ]);
     this.registered = true;
   },
@@ -40,14 +40,18 @@ export const level4 = {
     term.println("", "");
     term.printBlock(
 `Drone has the survivor at the rooftop. Extraction is two minutes out.
+But thermite suppression is still armed. Override the containment system.
 
-But thermite suppression is still armed. We have to override containment
-from the building management system. The auth code is split across the
-fragments you already have, plus one piece our radio just picked up —
-short and long pulses, looped.
+THE AUTH CODE has THREE parts, joined with hyphens, ALL CAPS:
+    <codename> - <strain> - <room>
 
-Inventory says you've got most of the code already. The radio has the rest.
-Combine them, format with hyphens, all caps, then 'auth <code>'.
+WHERE TO FIND EACH PART
+  • <codename>  →  in your inventory (the L2 codename you submitted)
+  • <strain>    →  decode the MORSE on the radio (use AI). it's a 2-char
+                   strain ID you also saw in log1 from L2.
+  • <room>      →  in your inventory as ROOM-XX. just the number.
+
+Submit:    auth <CODE>
 
 Commands: inventory / radio / play morse / auth <code> / brief / hint`,
       "info"
@@ -94,11 +98,11 @@ Commands: inventory / radio / play morse / auth <code> / brief / hint`,
         state.addScore(-2);
         state.save();
         term.println(`[ auth REJECTED: ${guess} ]`, "danger");
-        if (guess.includes(MORSE_PLAINTEXT) === false) {
-          term.println("  no strain ID detected in your code.", "warn");
-        } else if (!guess.startsWith("AEGIS")) {
-          term.println("  format mismatch — codename first.", "warn");
-        }
+        // per-piece diagnostics so player sees exactly what's missing
+        if (!guess.includes("AEGIS")) term.println("  ✗ codename missing — check inventory for the L2 codename.", "warn");
+        if (!guess.includes(MORSE_PLAINTEXT)) term.println("  ✗ strain ID missing — decode the morse on radio.", "warn");
+        if (!/12/.test(guess)) term.println("  ✗ room number missing — look at ROOM-XX in inventory.", "warn");
+        if (!guess.includes("-")) term.println("  ✗ format wrong — separate parts with hyphens.", "warn");
         return;
       }
       default:

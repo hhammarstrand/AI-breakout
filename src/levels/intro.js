@@ -47,7 +47,7 @@ export const intro = {
       "[ 14:02:11 ] INCOMING TRANSMISSION FROM OPS LEAD",
       "",
       "  > Helix Tower is dark. We lost contact 41 minutes ago.",
-      "  > Aegis BioSystems was running a Class-IV trial on floor 4.",
+      "  > Paraply Bioteknik was running a Class-IV trial on floor 4.",
       "  > Building autonomic systems are still online but acting strange.",
       "  > One survivor confirmed via emergency tag — name: DR. K. NORDLUND.",
       "  > She is somewhere inside. We don't know where. We don't know what",
