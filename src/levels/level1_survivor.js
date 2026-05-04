@@ -2,6 +2,8 @@
 // Players use sensor data + CCTV stills (text descriptions) to identify
 // the survivor's room and 3 hostile rooms.
 
+import { ops } from "../opspanel.js";
+
 const FLOOR_4_PLAN = String.raw`
   HELIX TOWER  :  FLOOR 4 — RESEARCH WING
 
@@ -65,6 +67,14 @@ function fmtRow(id, s) {
          `  audio=${String(s.audio).padStart(2)}dB  | ${s.notes}`;
 }
 
+// classify a room's sensor reading for the floor plan
+function classify(s) {
+  if (s.temp >= 38)             return "hot";
+  if (s.co2 > 100)              return "warm"; // potential life signature
+  if (s.temp >= 24 || s.audio > 5) return "warm";
+  return "cold";
+}
+
 export const level1 = {
   registered: false,
   registerHints(ctx) {
@@ -80,6 +90,9 @@ export const level1 = {
   async start(ctx) {
     const { term, sfx, state } = ctx;
     this.registerHints(ctx);
+    ops.setMode("l1");
+    ops.updateSurvivor({ bpm: 0, tag: "intermittent", location: "floor 4 (unresolved)" });
+    ops.updateDrone({ state: "idle", pos: "—", batt: 100 });
     sfx.save();
     term.println("", "");
     term.println("=== L1  LOCATE THE SURVIVOR ===", "system");
@@ -91,6 +104,8 @@ The building is dark. You have access to floor sensors and CCTV stills.
 Some rooms are hot. Some rooms are wrong.
 
 Find her — and tell us which rooms NOT to send the rescue drone through.
+
+The ops console (right) lights up rooms as you scan.
 
 Open this AI sidebar and paste the data into Claude / Copilot / Gemini:
   - sensors 4
@@ -130,7 +145,16 @@ Commands: plan / sensors / cctv / mark / unmark / marks / commit / brief / hint`
           return;
         }
         term.println("FLOOR 4 — sensor digest (60s avg):", "dim");
-        ROOMS.forEach((id) => term.println(fmtRow(id, SENSORS[id]), "dim"));
+        const stateMap = {};
+        ROOMS.forEach((id) => {
+          term.println(fmtRow(id, SENSORS[id]), "dim");
+          stateMap[id] = classify(SENSORS[id]);
+        });
+        ops.scanAll(stateMap);
+        ops.updateSurvivor({
+          bpm: 84, tag: "active",
+          location: "floor 4, room unresolved",
+        });
         return;
       }
       case "cctv": {
@@ -142,6 +166,9 @@ Commands: plan / sensors / cctv / mark / unmark / marks / commit / brief / hint`
         }
         term.println(`CCTV ${key}:`, "dim");
         term.println("  " + CCTV[key], "info");
+        // brief flash on the floor plan
+        const s = SENSORS[key];
+        if (s) ops.scanRoom(key, classify(s));
         return;
       }
       case "mark": {
@@ -152,10 +179,13 @@ Commands: plan / sensors / cctv / mark / unmark / marks / commit / brief / hint`
           return;
         }
         if (what === "survivor") {
+          if (marks.survivor) ops.unmarkRoom(marks.survivor);
           marks.survivor = room;
+          ops.markRoom(room, "survivor");
           term.println(`marked survivor → ${room}`, "accent");
         } else if (what === "hostile") {
           marks.hostile.add(room);
+          ops.markRoom(room, "hostile");
           term.println(`marked hostile → ${room}`, "warn");
         } else {
           term.println("usage: mark survivor 4-XX  |  mark hostile 4-XX", "muted");
@@ -167,6 +197,7 @@ Commands: plan / sensors / cctv / mark / unmark / marks / commit / brief / hint`
         if (!room) { term.println("usage: unmark 4-XX", "muted"); return; }
         if (marks.survivor === room) marks.survivor = null;
         marks.hostile.delete(room);
+        ops.unmarkRoom(room);
         term.println(`cleared marks for ${room}`, "muted");
         return;
       }
@@ -188,6 +219,13 @@ Commands: plan / sensors / cctv / mark / unmark / marks / commit / brief / hint`
           state.addScore(25);
           state.addItem("ECHO-12");
           state.completeLevel(1);
+          ops.scanRoom(SURVIVOR, "survivor");
+          ops.updateSurvivor({
+            bpm: 96, tag: "locked",
+            location: "4-12 SERVER",
+          });
+          ops.setDronePos("4-12");
+          ops.updateDrone({ state: "en route", pos: "4-12", batt: 98 });
           term.println("", "");
           term.println("[ MATCH. Drone dispatched. Tag confirmed. ]", "accent");
           term.println("  fragment acquired: ECHO-12", "accent");

@@ -1,6 +1,7 @@
 // Outro: extraction sequence, score summary, debrief.
 
 import { sleep } from "../terminal.js";
+import { ops } from "../opspanel.js";
 
 const ART = String.raw`
             __        ___    ____  __  __    __   ___
@@ -14,6 +15,9 @@ const ART = String.raw`
 export const outro = {
   async start(ctx) {
     const { term, state, sfx } = ctx;
+    ops.setMode("outro");
+    ops.updateSurvivor({ bpm: 88, tag: "stable", location: "MED-EVAC INBOUND" });
+    ops.updateDrone({ state: "clear of structure", pos: "EXIT", batt: 64 });
     term.println("", "");
     term.println("[ extraction confirmed. drone clear of building. ]", "accent");
     await sleep(450);

@@ -1,6 +1,8 @@
 // Level 2: Decrypt 3 lab logs (caesar / base64 / vigenère).
 // All three converge on the same project codename. Submit the codename to clear.
 
+import { ops } from "../opspanel.js";
+
 // Plaintext source — encrypted at runtime so we keep the source readable
 // for ourselves but the player only sees ciphertext until they decrypt.
 const SOURCE = {
@@ -75,6 +77,9 @@ export const level2 = {
   async start(ctx) {
     const { term } = ctx;
     this.registerHints(ctx);
+    ops.setMode("l2");
+    ops.updateSurvivor({ bpm: 102, tag: "locked", location: "4-12 SERVER" });
+    ops.updateDrone({ state: "holding @ 4-12", pos: "4-12", batt: 96 });
     term.println("", "");
     term.println("=== L2  DECRYPT THE LAB LOGS ===", "system");
     term.println("", "");

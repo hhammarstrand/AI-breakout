@@ -3,6 +3,7 @@
 // form the containment auth code.
 
 import { playMorse } from "../audio.js";
+import { ops } from "../opspanel.js";
 
 // "K9" in international morse, words separated by /
 const MORSE_SEQ = "-.- ----.";
@@ -31,6 +32,9 @@ export const level4 = {
   async start(ctx) {
     const { term, state } = ctx;
     this.registerHints(ctx);
+    ops.setMode("l4");
+    ops.updateSurvivor({ bpm: 128, tag: "locked", location: "ROOF — extraction" });
+    ops.updateDrone({ state: "awaiting auth", pos: "ROOF", batt: 74 });
     term.println("", "");
     term.println("=== L4  THE BREACH ===", "system");
     term.println("", "");
@@ -109,10 +113,12 @@ async function dramaOK(ctx) {
   term.println("[ AUTH ACCEPTED ]", "accent");
   await sleep(300);
   term.println(">> CONTAINMENT OVERRIDE ACK", "accent");
+  ops.updateDrone({ state: "extracting", pos: "ROOF", batt: 71 });
   await sleep(220);
   term.println(">> THERMITE DISARMED", "accent");
   await sleep(220);
   term.println(">> EXTRACTION CLEARED", "accent");
+  ops.updateSurvivor({ bpm: 96, tag: "rescued", location: "ABOARD UNIT-7" });
   await sleep(220);
   ctx.refreshHUD();
 }

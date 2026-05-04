@@ -108,3 +108,43 @@ function tone(freq, ms) {
 }
 
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+// ============== heartbeat ==============
+// Plays a low double-thump on a self-scheduling timer. Tempo follows BPM.
+// Volume scales up as the rate increases (ramps tension).
+
+let heartbeatTimer = null;
+let heartbeatBpm = 0;
+
+function thump(volume = 0.05) {
+  if (!on()) return;
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = "sine";
+  o.frequency.setValueAtTime(120, ctx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(48, ctx.currentTime + 0.13);
+  g.gain.setValueAtTime(volume, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.16);
+  o.connect(g); g.connect(ctx.destination);
+  o.start(); o.stop(ctx.currentTime + 0.18);
+}
+
+export function setHeartbeat(bpm) {
+  heartbeatBpm = bpm | 0;
+  if (heartbeatTimer) { clearTimeout(heartbeatTimer); heartbeatTimer = null; }
+  if (!heartbeatBpm) return;
+  scheduleHeart();
+}
+
+function scheduleHeart() {
+  if (!heartbeatBpm) return;
+  const interval = 60_000 / heartbeatBpm;
+  heartbeatTimer = setTimeout(() => {
+    if (!state.get().audio) { scheduleHeart(); return; }
+    const vol = Math.min(0.07, 0.025 + Math.max(0, heartbeatBpm - 80) * 0.0015);
+    thump(vol);
+    setTimeout(() => thump(vol * 0.65), Math.max(110, interval * 0.18));
+    scheduleHeart();
+  }, interval);
+}
+

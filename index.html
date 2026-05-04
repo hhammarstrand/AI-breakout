@@ -12,9 +12,10 @@
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <div class="crt">
+  <div class="crt" id="crt">
     <div class="scanlines" aria-hidden="true"></div>
     <div class="vignette" aria-hidden="true"></div>
+    <div id="glitch-overlay" class="glitch-overlay" aria-hidden="true"></div>
 
     <header class="hud">
       <span class="hud-label">BLACKOUT</span>
@@ -29,8 +30,9 @@
       <button id="audio-toggle" class="hud-btn" type="button" title="Toggle audio">SFX ON</button>
     </header>
 
-    <main id="terminal" class="terminal" aria-live="polite">
-      <div id="boot-fallback" class="line dim">
+    <div class="layout">
+      <main id="terminal" class="terminal" aria-live="polite">
+        <div id="boot-fallback" class="line dim">
 booting...
 
 if this text doesn't disappear in a moment, you likely opened
@@ -42,8 +44,11 @@ run a local server from the project folder, then refresh:
   → http://localhost:8000
 
 or any other static server (npx serve, caddy, etc).
-      </div>
-    </main>
+        </div>
+      </main>
+
+      <aside id="ops-panel" class="ops-panel" aria-label="ops console"></aside>
+    </div>
 
     <form id="prompt-form" class="prompt-row" autocomplete="off">
       <span id="prompt-label" class="prompt-label">op@blackout:~$</span>

@@ -3,6 +3,8 @@
 // server room to the rooftop avoiding hostile rooms and locked doors.
 // They submit the door sequence; we verify against a canonical solution.
 
+import { ops } from "../opspanel.js";
+
 const HOSTILE = new Set(["4-03", "4-07", "4-15"]);
 
 // Each door connects exactly two rooms. "locked" doors cannot be used.
@@ -93,6 +95,9 @@ export const level3 = {
   async start(ctx) {
     const { term } = ctx;
     this.registerHints(ctx);
+    ops.setMode("l3");
+    ops.updateSurvivor({ bpm: 114, tag: "locked", location: "4-12 SERVER" });
+    ops.updateDrone({ state: "awaiting route", pos: "4-12", batt: 91 });
     term.println("", "");
     term.println("=== L3  BUILD THE DOOR AGENT ===", "system");
     term.println("", "");
@@ -139,6 +144,24 @@ Commands: spec / doors / hostile / agent <seq> / brief / hint`,
           state.addScore(25);
           state.addItem("ROUTE-" + CANONICAL.join("-"));
           state.completeLevel(3);
+          // walk drone marker through the path on the floor plan
+          const visited = ["4-12"];
+          let here = "4-12";
+          for (const id of CANONICAL) {
+            const door = DOORS.find((d) => d.id === id);
+            const next = door.a === here ? door.b : door.a;
+            visited.push(next); here = next;
+          }
+          let i = 0;
+          const stepRoom = () => {
+            const r = visited[i++];
+            if (!r) { ops.updateDrone({ state: "at rooftop", pos: "ROOF", batt: 78 }); return; }
+            ops.setDronePos(r);
+            ops.updateDrone({ state: "in transit", pos: r, batt: 88 - i });
+            if (i < visited.length) setTimeout(stepRoom, 380);
+            else setTimeout(() => ops.updateDrone({ state: "at rooftop", pos: "ROOF", batt: 78 }), 380);
+          };
+          stepRoom();
           term.println("", "");
           term.println("[ route accepted. drone moving. ]", "accent");
           term.println("  canonical answer: " + CANONICAL.join(" → "), "muted");

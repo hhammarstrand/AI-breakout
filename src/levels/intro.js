@@ -1,6 +1,7 @@
 // Intro: boot sequence + briefing.
 
 import { sleep } from "../terminal.js";
+import { ops } from "../opspanel.js";
 
 const LOGO = String.raw`
    ____  __    ___   ________ __ ____  __  ________
@@ -18,6 +19,9 @@ export const intro = {
     const { term, state, sfx } = ctx;
     term.clear();
     term.setEnabled(false);
+    ops.setMode("idle");
+    ops.updateSurvivor({ bpm: 0, tag: "no signal", location: "—" });
+    ops.updateDrone({ state: "powered down", pos: "—", batt: 100 });
 
     const bootLines = [
       "[ 0.000ms] BIOS init",

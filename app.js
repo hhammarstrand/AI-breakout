@@ -1,9 +1,12 @@
-// Entry point. Wires terminal, state, audio, and the level state machine.
+// Entry point. Wires terminal, state, audio, ops panel, atmosphere,
+// and the level state machine.
 
-import { Terminal, parseCommand, sleep } from "./src/terminal.js";
+import { Terminal, parseCommand } from "./src/terminal.js";
 import { state } from "./src/state.js";
-import { sfx, refreshAudio, startAmbient } from "./src/audio.js";
+import { sfx, refreshAudio, startAmbient, setHeartbeat } from "./src/audio.js";
 import { nextHint, registerHints, hintCount } from "./src/hints.js";
+import { ops } from "./src/opspanel.js";
+import { atmosphere } from "./src/atmosphere.js";
 
 import { intro }   from "./src/levels/intro.js";
 import { level1 }  from "./src/levels/level1_survivor.js";
@@ -26,6 +29,7 @@ const ui = {
   timer: document.getElementById("hud-timer"),
   audioBtn: document.getElementById("audio-toggle"),
   crt: document.querySelector(".crt"),
+  glitchOverlay: document.getElementById("glitch-overlay"),
 };
 
 function refreshHUD() {
@@ -40,6 +44,7 @@ function updateTimer() {
   const m = Math.floor(totalSec / 60).toString().padStart(2, "0");
   const ss = (totalSec % 60).toString().padStart(2, "0");
   ui.timer.textContent = `${m}:${ss}`;
+  ops.updateThermite(ms);
   if (totalSec <= 0) {
     ui.crt.classList.add("danger");
     ui.timer.textContent = "00:00";
@@ -48,6 +53,30 @@ function updateTimer() {
   } else {
     ui.crt.classList.remove("danger");
   }
+}
+
+// Adjust heartbeat audio based on current level + remaining time.
+// Survivor BPM ramps with progression and accelerates under low time.
+function updateHeartbeat() {
+  const s = state.get();
+  const remaining = state.containmentRemainingMs();
+  if (s.level <= 0 || s.level >= 5) { setHeartbeat(0); return; }
+  let bpm = 84;
+  if (s.completed.includes(1)) bpm = 96;
+  if (s.level >= 3) bpm = 110;
+  if (s.level >= 4) bpm = 124;
+  if (remaining < 12 * 60 * 1000) bpm += 14;
+  if (remaining < 5  * 60 * 1000) bpm += 10;
+  setHeartbeat(bpm);
+}
+
+function fireGlitch() {
+  if (!ui.glitchOverlay) return;
+  ui.glitchOverlay.classList.remove("active");
+  // force reflow so animation can replay
+  void ui.glitchOverlay.offsetWidth;
+  ui.glitchOverlay.classList.add("active");
+  sfx.glitch();
 }
 
 let activeLevel = null;
@@ -70,15 +99,18 @@ const ctx = {
 };
 
 async function runLevel(n) {
+  const prev = state.get().level;
   state.setLevel(n);
   setLabel();
   refreshHUD();
+  if (prev !== n && n > 0) fireGlitch();
   activeLevel = levels[n];
   if (!activeLevel) {
     term.println(`[fatal] no module for level ${n}`, "danger");
     return;
   }
   await activeLevel.start(ctx);
+  updateHeartbeat();
 }
 
 function dispatch(line) {
@@ -87,7 +119,6 @@ function dispatch(line) {
   const cmd = (args[0] || "").toLowerCase();
   const rest = args.slice(1);
 
-  // Global commands always available.
   if (handleGlobal(cmd, rest, line)) { refreshHUD(); return; }
   if (activeLevel && activeLevel.onCommand) {
     activeLevel.onCommand(cmd, rest, line, ctx);
@@ -108,7 +139,6 @@ function handleGlobal(cmd, rest) {
     case "audio":    return toggleAudio();
     case "reset":    return doReset(rest[0] === "--confirm");
     case "skip":
-      // dev cheat: only available with ?dev=1
       if (new URLSearchParams(location.search).get("dev") === "1") {
         const next = state.get().level + 1;
         term.println(`[dev] skipping to level ${next}`, "warn");
@@ -180,7 +210,8 @@ function toggleAudio() {
   const enabled = state.toggleAudio();
   ui.audioBtn.textContent = enabled ? "SFX ON" : "SFX OFF";
   refreshAudio();
-  if (enabled) startAmbient();
+  if (enabled) { startAmbient(); updateHeartbeat(); }
+  else { setHeartbeat(0); }
   term.println(enabled ? "audio: ON" : "audio: OFF", "muted");
   return true;
 }
@@ -196,9 +227,10 @@ function doReset(confirmed) {
   return true;
 }
 
-// Boot.
 async function boot() {
   state.load();
+  ops.init();
+  atmosphere.attach(term);
   refreshHUD();
   setLabel();
   ui.audioBtn.textContent = state.get().audio ? "SFX ON" : "SFX OFF";
@@ -210,18 +242,19 @@ async function boot() {
 
   term.setHandler(dispatch);
 
-  // start ambient on first user gesture (browsers require it)
   const startAudioOnce = () => {
     startAmbient();
+    updateHeartbeat();
     document.removeEventListener("keydown", startAudioOnce);
     document.removeEventListener("click", startAudioOnce);
   };
   document.addEventListener("keydown", startAudioOnce);
   document.addEventListener("click", startAudioOnce);
 
-  // tick timer
-  setInterval(updateTimer, 1000);
+  setInterval(() => { updateTimer(); updateHeartbeat(); }, 1000);
   updateTimer();
+
+  atmosphere.start();
 
   term.focus();
 
