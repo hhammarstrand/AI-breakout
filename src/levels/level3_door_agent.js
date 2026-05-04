@@ -84,11 +84,11 @@ export const level3 = {
   registered: false,
   registerHints(ctx) {
     if (this.registered) return;
-    ctx.registerHints(3, [
-      "Translate the door list into a graph: nodes are rooms, edges are doors.",
-      "Hostile rooms are not just to avoid passing through — you can't even enter them. Filter the graph first.",
-      "BFS gives shortest path. Walk parents back to reconstruct the door sequence.",
-    ]);
+    ctx.registerHints(3, {
+      nudge:  "Doors are edges, rooms are nodes. Locked doors don't exist for you. Hostile rooms can't be entered AT ALL — not even passed through.",
+      method: "Ask AI to write BFS in Python or JS. PRE-FILTER the door list: drop locked doors AND drop edges that touch hostile rooms. BFS from 4-12 to ROOF, reconstruct the door IDs from parent pointers. RUN the script — don't trust manual tracing.",
+      answer: "Build adjacency from non-locked doors that don't touch any hostile room. BFS from 4-12 to ROOF. Optimal path is 4 doors via the east stairwell.",
+    });
     this.registered = true;
   },
 

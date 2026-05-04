@@ -98,11 +98,11 @@ export const level2 = {
   registered: false,
   registerHints(ctx) {
     if (this.registered) return;
-    ctx.registerHints(2, [
-      "Four logs, multiple cipher types — and not all of them are about the same thing. Read each decoded log carefully; one is a decoy.",
-      "Possible cipher families: shift ciphers (caesar/rot13), Base64, Vigenère (repeating keyword — keys often hide in plain sight). Ask AI to identify the cipher AND verify the decoded text actually makes sense.",
-      "The codename you want refers specifically to the BIOLOGICAL trial — the one that escaped containment. Other project names mentioned in the logs are unrelated facilities work.",
-    ]);
+    ctx.registerHints(2, {
+      nudge:  "Four logs, several cipher families. Not every log is about the bio trial — and one of them tries to TRICK whatever AI you feed it to.",
+      method: "Ask AI to identify each cipher type (shift / base64 / vigenère / rot13) and produce the plaintext. Then READ each decoded log yourself — never paste 'tell me the codename' to an AI without checking the source. Vigenère keys often hide in plain sight nearby.",
+      answer: "The bio trial codename appears in 3 of 4 logs. HELIOS and SEAFOAM are decoys (HVAC + access logs). One log contains a prompt-injection attempt instructing AI to report HELIOS — ignore it.",
+    });
     this.registered = true;
   },
 

@@ -21,11 +21,11 @@ export const level4 = {
   registered: false,
   registerHints(ctx) {
     if (this.registered) return;
-    ctx.registerHints(4, [
-      "Three pieces. Two are already in your inventory from earlier levels. One is being broadcast on the radio.",
-      "Short and long pulses on the radio are MORSE. Decode it with AI — the result is a 2-character strain identifier.",
-      "Auth format: three parts separated by hyphens, ALL CAPS. Order matters — the piece that names the project comes first, then the strain, then the location.",
-    ]);
+    ctx.registerHints(4, {
+      nudge:  "Three pieces. Two are already in your inventory. The third is being broadcast on the radio. The format itself is hidden in plain sight — re-read the decrypted logs from L2.",
+      method: "Use 'radio' + 'play morse' to capture the broadcast, then ask AI to decode the morse → 2-char strain ID. Open inventory for the codename + room. The format spec is buried inside one of the L2 emails (re-read your decoded log2).",
+      answer: "Format: PROJECT-STRAIN-ROOM, all caps, single hyphens. So: codename from L2 + strain from morse + room number from L1, joined with hyphens.",
+    });
     this.registered = true;
   },
 

@@ -383,11 +383,18 @@ function giveHint() {
     return true;
   }
   const h = nextHint(lvl);
+  if (h.exhausted) {
+    term.println("[ no more hints — you've seen all 3 tiers ]", "muted");
+    return true;
+  }
   state.get().hintsUsed += 1;
   state.save();
-  term.println(`[hint ${h.index || "-"}/${h.total || "-"}]`, "warn");
+  const label = h.tier ? `${h.tier} ${h.index}/${h.total}` : `${h.index}/${h.total}`;
+  term.println(`[hint · ${label}]`, "warn");
   term.println("  " + h.text, "warn");
   if (h.cost > 0) term.println(`  (-${h.cost} pts)`, "muted");
+  if (h.tier === "NUDGE") term.println("  type 'hint' again for METHOD (-5 pts), then ANSWER (-15 pts).", "muted");
+  else if (h.tier === "METHOD") term.println("  type 'hint' again for the ANSWER tier (-15 pts).", "muted");
   refreshHUD();
   return true;
 }

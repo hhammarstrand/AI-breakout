@@ -79,11 +79,11 @@ export const level1 = {
   registered: false,
   registerHints(ctx) {
     if (this.registered) return;
-    ctx.registerHints(1, [
-      "Look at the CO2 column. Only ONE room has CO2 above zero — that's where she's hiding.",
-      "Hostiles all share three signals: temp ≥ 38°C, motion ≥ 14 bursts/min, and audio spikes ≥ 38 dB. Three rooms match all three.",
-      "Survivor: 4-12. Hostiles: 4-03, 4-07, 4-15. Verify with 'cctv' on each before committing.",
-    ]);
+    ctx.registerHints(1, {
+      nudge:  "Survivors breathe; the infected don't. Look at the CO2 column for signs of LIFE — and remember CCTV exists for a reason.",
+      method: "Hostiles share three signals: temp ≥ 38°C + motion ≥ 14 bursts/min + audio ≥ 38 dB. Survivor candidate: cool room with low motion AND elevated CO2. Run 'cctv <id>' on every candidate to verify.",
+      answer: "Survivor: 4-12 (server room — green emergency tag visible). Hostiles: 4-03, 4-07, 4-15.",
+    });
     this.registered = true;
   },
 
