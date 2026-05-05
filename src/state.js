@@ -20,6 +20,7 @@ const initial = () => ({
   osRebootDone: false, // BMS-→CDC mid-game skin switch (one-shot at T+30min)
   marginNotesFired: {}, // { 1: true, ... } — operator voices already played per level
   deepScans: {},        // { 1: true, ... } — bonus stretch objectives claimed
+  maydayUsed: false,    // one-shot panic-button bonus clue
   bestRun: null,        // { timeSec, score, hintsUsed, wrongAttempts, sig, at }
 });
 

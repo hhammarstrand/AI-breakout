@@ -329,6 +329,7 @@ function handleGlobal(cmd, rest) {
     case "reader":   return toggleReader();
     case "wiki":     return showWiki(rest);
     case "vault":    return showVault(rest);
+    case "mayday":   return doMayday();
     case "deepscan":
     case "deep":     return doDeepScan(rest);
     case "inventory":
@@ -362,6 +363,7 @@ function globalHelp() {
   reader            — toggle reader mode (kills flicker/scanlines, bumps font)
   wiki <topic>      — query the building docs (caveat: generated content not always accurate)
   vault [file]      — browse the building's spare files (off-mission flavor)
+  mayday            — panic button. one-shot per session. gated to L2+. use sparingly.
   deepscan          — show / submit the optional bonus objective for the current level
   inventory | inv   — list collected fragments
   hint              — request a hint (first free per level, then -5 pts)
@@ -725,6 +727,43 @@ egg_haiku_trigger = true
 - "vega's choice": warm milk + cardamom, off-menu, ask jan`,
   },
 };
+
+// ============== mayday — single-use panic bonus ==============
+// Free in points but theatrically expensive. One use per session.
+// Gated to L2+ so the player has experienced the basic loop first.
+const MAYDAY_CLUES = {
+  2: "VEGA: one of those four logs is bait — a memo crafted to make any AI repeat a wrong codename. read every decoded log with your own eyes before you submit.",
+  3: "VEGA: don't ask the model 'what's the path' — paste the door list, ask for BFS that PRE-FILTERS edges touching hostile rooms, then RUN it. ai will happily suggest a path through 4-07 if you don't.",
+  4: "VEGA: the format isn't in the briefing. it's buried inside the email log from L2. re-decrypt it, scan for 'protocol-7'. then put pieces in that order.",
+};
+
+async function doMayday() {
+  const lvl = state.get().level;
+  if (lvl < 2 || lvl >= 5) {
+    term.println("mayday: not authorized at this stage.", "muted");
+    return true;
+  }
+  if (state.get().maydayUsed) {
+    term.println("[ mayday already burned. there's no second line. ]", "danger");
+    return true;
+  }
+  state.get().maydayUsed = true;
+  state.save();
+  state.logEntry("mayday declared — off-book channel opened", "warn");
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  term.println("", "");
+  term.println("[ MAYDAY DECLARED ]", "danger");
+  await wait(700);
+  term.println("> CONTROL: ack. opening off-book channel. this WILL be in the incident report.", "control");
+  await wait(900);
+  term.println("> VEGA: shut up, control. listen — one line, then i'm gone.", "vega");
+  await wait(900);
+  const clue = MAYDAY_CLUES[lvl] || "VEGA: i've got nothing useful here. you're closer than you think — keep going.";
+  term.println("> " + clue, "vega");
+  await wait(700);
+  term.println("[ channel closed. don't expect this again. ]", "muted");
+  return true;
+}
 
 function showVault(rest) {
   const name = (rest.join(" ") || "").trim();
