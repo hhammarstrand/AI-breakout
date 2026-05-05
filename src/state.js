@@ -19,6 +19,7 @@ const initial = () => ({
   journal: [],         // [{ ts, kind, text }] auto-log of key events
   osRebootDone: false, // BMS-→CDC mid-game skin switch (one-shot at T+30min)
   vegaCompromised: false, // post-reboot VEGA-lies sequence already scheduled
+  ending: null,         // "extract" | "quarantine" | "purge" — branching outro
   marginNotesFired: {}, // { 1: true, ... } — operator voices already played per level
   deepScans: {},        // { 1: true, ... } — bonus stretch objectives claimed
   maydayUsed: false,    // one-shot panic-button bonus clue
@@ -110,6 +111,8 @@ export const state = {
     cache.teamName = name ? String(name).trim().slice(0, 24) : null;
     this.save();
   },
+
+  setEnding(e) { cache.ending = e; this.save(); },
 
   // Append a key event to the journal. Used for level transitions, hint
   // usage, item acquisition — anything that helps a late-joiner catch up.

@@ -104,6 +104,22 @@ Commands: inventory / radio / play morse / auth <code> / brief / hint`,
         }
         return;
       }
+      case "extract":
+      case "quarantine":
+      case "purge": {
+        if (!state.hasItem(AUTH)) {
+          term.println(`'${cmd}' is unauthorized until containment override succeeds. submit 'auth <CODE>' first.`, "muted");
+          return;
+        }
+        state.setEnding(cmd);
+        state.logEntry(`protocol committed: ${cmd.toUpperCase()}`, "system");
+        await sleep(200);
+        term.println("", "");
+        term.println(`[ PROTOCOL ${cmd.toUpperCase()} — committed ]`, "danger");
+        await sleep(800);
+        ctx.go(5);
+        return;
+      }
       case "auth": {
         const guess = (args.join("") || "").toUpperCase().replace(/\s+/g, "");
         if (!guess) { term.println("usage: auth <CODE>", "muted"); return; }
@@ -130,7 +146,7 @@ Commands: inventory / radio / play morse / auth <code> / brief / hint`,
           state.addItem(AUTH);
           state.completeLevel(4);
           await dramaOK(ctx);
-          ctx.go(5);
+          await showEndingPrompt(ctx);
           return;
         }
 
@@ -163,18 +179,43 @@ Commands: inventory / radio / play morse / auth <code> / brief / hint`,
   },
 };
 
+async function showEndingPrompt(ctx) {
+  const { term } = ctx;
+  term.println("", "");
+  term.println("[ OVERRIDE HOLDING — choose containment protocol ]", "system");
+  term.println("", "");
+  term.printBlock(
+`Three protocols are loaded. ALL THREE are valid uses of override authority.
+Pick one. Each is final.
+
+  extract     — drone retrieves Dr. Nordlund. thermite stands down. building
+                remains intact and quarantined for follow-up sweep.
+                (the by-the-book ending. mission as briefed.)
+
+  quarantine  — seal floor 4 indefinitely. hostiles trapped, alive. drone
+                holds station. Dr. Nordlund extracts from the roof but the
+                tower stays sealed for years while bio-3 is studied.
+                (the cautious ending. she goes home. the floor never reopens.)
+
+  purge       — ignite thermite immediately on all floors. nothing escapes.
+                neither does she. the substrate dies in the building.
+                (the heavy ending. the city is safe. the operator carries it.)
+
+→ type your verb to commit. you cannot undo.`,
+    "info"
+  );
+}
+
 async function dramaOK(ctx) {
   const { term } = ctx;
   term.println("", "");
   term.println("[ AUTH ACCEPTED ]", "accent");
   await sleep(300);
-  term.println(">> CONTAINMENT OVERRIDE ACK", "accent");
-  ops.updateDrone({ state: "extracting", pos: "ROOF", batt: 71 });
+  term.println(">> CONTAINMENT OVERRIDE READY", "accent");
   await sleep(220);
-  term.println(">> THERMITE DISARMED", "accent");
+  term.println(">> THERMITE STANDBY", "accent");
   await sleep(220);
-  term.println(">> EXTRACTION CLEARED", "accent");
-  ops.updateSurvivor({ bpm: 96, tag: "rescued", location: "ABOARD UNIT-7" });
+  term.println(">> AWAITING PROTOCOL", "accent");
   await sleep(220);
   ctx.refreshHUD();
 }
