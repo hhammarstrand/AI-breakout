@@ -36,11 +36,17 @@ export function ensureAudioRunning() {
     if (warmedUp) return;
     if (ctx.state !== "running") return;
     try {
+      // Audible-but-brief warmup ping. Pure 0.0001 gain doesn't register
+      // with Chrome's "tab is producing sound" indicator, so we play a
+      // 60ms 880Hz sine at low (but non-zero) volume.
       const o = ctx.createOscillator();
       const g = ctx.createGain();
-      g.gain.value = 0.0001; // inaudible
+      o.type = "sine";
+      o.frequency.value = 880;
+      g.gain.setValueAtTime(0.012, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.06);
       o.connect(g); g.connect(ctx.destination);
-      o.start(); o.stop(ctx.currentTime + 0.05);
+      o.start(); o.stop(ctx.currentTime + 0.07);
       warmedUp = true;
     } catch {}
   };

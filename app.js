@@ -1043,29 +1043,26 @@ async function boot() {
     return;
   }
 
-  // Resume the AudioContext on EVERY user gesture (cheap if already running)
-  // — Chrome/Safari sometimes ignore lazy resume() calls outside a gesture
-  // window, so we re-arm aggressively rather than rely on one-shot.
-  const armAudio = () => { ensureAudioRunning(); };
-  document.addEventListener("keydown", armAudio);
-  document.addEventListener("click", armAudio);
-  document.addEventListener("pointerdown", armAudio);
-  document.addEventListener("touchstart", armAudio, { passive: true });
-
-  // Start the ambient + heartbeat exactly ONCE, on first interaction.
+  // Resume the AudioContext on EVERY user gesture (capture phase so we
+  // catch the event before terminal handlers preventDefault). Cheap when
+  // already running. Some browsers re-suspend silently and lazy resume
+  // calls outside a gesture window are no-ops, so we re-arm aggressively.
   let ambientStarted = false;
-  const startAmbientOnce = () => {
-    if (ambientStarted) return;
-    ambientStarted = true;
-    ensureAudioRunning().then(() => {
+  const armAudio = () => {
+    ensureAudioRunning();
+    if (!ambientStarted) {
+      ambientStarted = true;
+      // Run synchronously inside the gesture handler — DON'T await the
+      // resume Promise (some browsers lose gesture context on microtask
+      // queue resumption).
       startAmbient();
       updateHeartbeat();
-    });
+    }
   };
-  document.addEventListener("keydown", startAmbientOnce, { once: true });
-  document.addEventListener("click", startAmbientOnce, { once: true });
-  document.addEventListener("pointerdown", startAmbientOnce, { once: true });
-  document.addEventListener("touchstart", startAmbientOnce, { once: true, passive: true });
+  document.addEventListener("keydown",     armAudio, { capture: true });
+  document.addEventListener("click",       armAudio, { capture: true });
+  document.addEventListener("pointerdown", armAudio, { capture: true });
+  document.addEventListener("touchstart",  armAudio, { capture: true, passive: true });
 
   // Some browsers re-suspend on tab visibility change. Re-arm on focus.
   document.addEventListener("visibilitychange", () => {
