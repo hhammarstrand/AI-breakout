@@ -1,6 +1,10 @@
 // Tiny terminal engine: typewriter output queue + command parser.
 // Levels register handlers via Terminal.setHandler(fn).
 
+// Lazy-load sfx to avoid any module init ordering surprises.
+let sfxType = null;
+import("./audio.js").then((m) => { sfxType = m.sfx.type; }).catch(() => {});
+
 export class Terminal {
   constructor(rootEl, promptInputEl, promptLabelEl) {
     this.root = rootEl;
@@ -51,8 +55,10 @@ export class Terminal {
     div.className = "line" + (cls ? " " + cls : "");
     this.root.appendChild(div);
     for (let i = 0; i < text.length; i++) {
-      div.textContent += text[i];
+      const ch = text[i];
+      div.textContent += ch;
       this.#scroll();
+      if (sfxType) sfxType(ch);
       // small randomization for organic feel
       const wait = Math.max(2, charMs + (Math.random() * 4 - 2));
       // skip wait if user holds enter (best-effort)
