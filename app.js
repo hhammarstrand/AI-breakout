@@ -818,7 +818,51 @@ async function boot() {
   term.focus();
 
   const startLevel = state.get().level || 0;
+  // Cold-open: only on a fresh session (intro, never started the timer).
+  // Plays a fake boot-failure → recovery sequence before the real intro.
+  if (startLevel === 0 && !state.get().containmentStart) {
+    await coldOpen();
+  }
   await runLevel(startLevel);
+}
+
+// 5-6s "the system is broken before it boots" set-piece. Steals from
+// Stories Untold / Pony Island openings — first 30s decides whether teams
+// lean in. Only fires once per fresh session.
+async function coldOpen() {
+  if (ui.crt) ui.crt.classList.add("cold-open");
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  await wait(250);
+  term.println("[ paraply-bms-helix :: link establish ]", "muted");
+  await wait(450);
+  term.println("[ tunnel handshake ............. FAILED ]", "danger");
+  await wait(380);
+  term.println("[ retry 1/3 ]", "muted");
+  await wait(700);
+  term.println("[ tunnel handshake ............. FAILED ]", "danger");
+  await wait(380);
+  term.println("[ retry 2/3 ]", "muted");
+  await wait(550);
+  fireGlitch();
+  await wait(220);
+  term.println("[ kernel panic at 0x0042AEGIS ]", "danger");
+  term.println("[ EHOSTUNREACH ]", "danger");
+  await wait(900);
+  fireGlitch();
+  await wait(380);
+  term.println("[ . . . ]", "muted");
+  await wait(700);
+  term.println("[ failover relay located: cdc-emergency-7 ]", "warn");
+  await wait(550);
+  term.println("[ rerouting via secondary uplink ... ]", "warn");
+  await wait(700);
+  fireGlitch();
+  await wait(450);
+  term.println("[ ack ]", "accent");
+  await wait(500);
+  if (ui.crt) ui.crt.classList.remove("cold-open");
+  term.clear();
 }
 
 function showFacilitatorView(payload) {

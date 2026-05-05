@@ -73,6 +73,14 @@ html, body {
     radial-gradient(ellipse at center, rgba(8,40,28,0.7) 0%, var(--bg) 70%, #000 100%);
 }
 
+/* Cold-open — applied during the 5-6s fake boot-failure before the intro.
+   Slightly distressed look: more saturation on flicker, scanlines amplified. */
+.crt.cold-open {
+  animation: flicker 1.4s infinite;
+  filter: contrast(1.15) saturate(0.85);
+}
+.crt.cold-open .scanlines { opacity: 1.4; }
+
 /* CDC emergency-channel skin — applied mid-game at T+30:00 when the
    primary BMS link "drops". Shifts the palette to amber/orange and
    re-tints headers and HUD. Pure cosmetic but creates a memorable beat. */
