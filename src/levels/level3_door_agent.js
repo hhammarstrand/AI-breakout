@@ -149,16 +149,17 @@ THE GRAPH PROBLEM
     even passing through them is fatal
   • find the SHORTEST sequence of doors from 4-12 to ROOF
 
-USE AI — paste the door list + hostile list into Claude, ask it to
-write a BFS or Dijkstra in Python/JS that prints the door sequence.
-Run the script (in Claude's tool, or your own terminal), copy output.
+Workflow: paste the door list + hostile list to your AI partner and
+ask for BFS / Dijkstra in Python or JS. Then RUN the script (Claude's
+tool, your own terminal, anywhere) and submit its output. Don't trust
+manual tracing — graphs are bigger than they look.
 
 Commands here:
   spec       — full problem spec
-  doors      — door list as JSON (paste into AI)
-  hostile    — list of hostile rooms (paste into AI)
+  doors      — door list as JSON
+  hostile    — list of hostile rooms
   agent D01,D02,...   — submit your door sequence
-  brief / hint`,
+  hint / prompts  — tiered hints, vetted starter prompts`,
       "info"
     );
     term.printBlock(SPEC, "muted");

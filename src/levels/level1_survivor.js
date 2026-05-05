@@ -174,10 +174,10 @@ WHAT TO LOOK FOR
     visible in CCTV. CO2 alone can come from gas leaks or recently-
     abandoned rooms.
 
-USE AI — paste the sensor table into Claude / Copilot / Gemini and
-ask it to LIST every candidate (warm + hot rooms). Then run cctv on
-each one and ask the AI to read each image: "is this a living person,
-an infected entity, a mechanical source, or empty?"
+Workflow with your AI partner: paste the sensor table to it and ask
+for a CANDIDATE list (warm + hot rooms). Then run cctv on each
+candidate and have the AI interpret each image — living person,
+infected, mechanical, or empty? Type 'prompts' for vetted starters.
 
 Commands you have here:
   sensors 4   — full sensor digest for floor 4 (start here)
@@ -186,7 +186,7 @@ Commands you have here:
   mark survivor 4-XX     mark hostile 4-XX     unmark 4-XX
   marks       — show what you've marked
   commit      — submit your answer
-  hint        — get a nudge (first hint free)`,
+  hint / prompts  — tiered hints, vetted starter prompts`,
         "info"
       );
       briefedOnce = true;

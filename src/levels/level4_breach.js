@@ -46,9 +46,9 @@ DECODED L2 LOGS (re-paste here so you have the format text):
 [paste decoded log2 plaintext]
 
 FRAGMENTS:
-  codename:   [paste from inventory, e.g. AEGIS]
-  strain id:  [paste decoded morse, e.g. K9]
-  room:       [paste room number from inventory ROOM-XX, e.g. 12]
+  codename:   [paste your L2 codename from inventory]
+  strain id:  [paste your decoded morse — 2 chars]
+  room:       [paste room number from inventory's ROOM-XX item]
 
 Output: the assembled auth code, exactly as the format requires.`,
       },

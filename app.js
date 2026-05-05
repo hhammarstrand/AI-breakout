@@ -351,13 +351,18 @@ async function runLevel(n) {
 
 // All commands the dispatcher knows about — used for "did you mean?" suggestions
 const KNOWN_COMMANDS = [
+  // global
   "help", "tutorial", "how", "howto", "clear", "status", "team", "share",
   "seed", "prompts", "prompt", "journal", "log", "reader", "wiki",
+  "vault", "dossier", "critique", "mayday", "deepscan", "deep",
+  "commentary", "notes", "debrief", "report",
   "inventory", "inv", "hint", "audio", "reset", "skip",
   // level commands
   "begin", "brief", "plan", "floor", "sensors", "cctv", "mark", "unmark",
   "marks", "commit", "archive", "ls", "read", "cat", "submit", "spec",
   "doors", "hostile", "agent", "radio", "play", "auth", "credits",
+  // L4 ending verbs
+  "extract", "quarantine", "purge",
 ];
 
 function levenshtein(a, b) {
@@ -478,7 +483,7 @@ function globalHelp() {
   debrief           — copy-paste retro template (3 AAR questions). post-win.
   report            — open a printable incident-report souvenir (post-win).
   inventory | inv   — list collected fragments
-  hint              — request a hint (first free per level, then -5 pts)
+  hint              — tiered help: NUDGE (free) → METHOD (-5) → ANSWER (-15)
   brief             — re-read the current level briefing
   clear             — clear the terminal
   audio             — toggle SFX
@@ -511,7 +516,7 @@ and press Enter. The live ops panel on the right reflects state.`,
 
 THE 4 LEVELS (~12 min each)
   L1  locate the survivor + identify hostile rooms (sensors + CCTV)
-  L2  decrypt 3 lab logs to find the project codename
+  L2  decrypt 4 lab logs to find the project codename (one is a decoy)
   L3  build a door-routing agent to plot a safe path to the roof
   L4  combine fragments + decoded morse to override containment
 
@@ -530,8 +535,9 @@ THE OPS PANEL (right side)
 
 WHEN YOU GET STUCK
   • 'brief' — re-read the current level's briefing
-  • 'help' — list global commands
-  • 'hint' — first hint per level is free, then -5 pts each
+  • 'prompts' — show vetted starter prompts for the AI partner
+  • 'hint' — tiered help. NUDGE is free; METHOD costs -5; ANSWER costs -15
+  • 'mayday' — once per session, an off-book bonus clue (gated to L2+)
   • each level's briefing lists its own command set under "Commands:"
 
 GETTING STARTED RIGHT NOW
