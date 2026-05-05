@@ -1080,11 +1080,38 @@ async function boot() {
 
   const startLevel = state.get().level || 0;
   // Cold-open: only on a fresh session (intro, never started the timer).
-  // Plays a fake boot-failure → recovery sequence before the real intro.
+  // Browser autoplay policy requires a user gesture before any audio plays,
+  // so we gate the cold-open behind a click overlay. Once the user clicks,
+  // the audio context unlocks AND the cold-open starts in the same gesture.
   if (startLevel === 0 && !state.get().containmentStart) {
+    await waitForGesture();
     await coldOpen();
   }
   await runLevel(startLevel);
+}
+
+// Full-screen "click to establish link" overlay shown until the user makes
+// their first gesture. Resolves when clicked; that click also unlocks audio.
+function waitForGesture() {
+  return new Promise((resolve) => {
+    const gate = document.createElement("div");
+    gate.className = "boot-gate";
+    gate.innerHTML = `
+      <div class="boot-gate-inner">
+        <div class="boot-gate-title">PARAPLY-BMS-HELIX</div>
+        <div class="boot-gate-sub">remote operations console</div>
+        <div class="boot-gate-cursor">[ click anywhere to establish link ]</div>
+      </div>
+    `;
+    document.body.appendChild(gate);
+    const dismiss = () => {
+      ensureAudioRunning();
+      gate.classList.add("dismissed");
+      setTimeout(() => { gate.remove(); resolve(); }, 320);
+    };
+    gate.addEventListener("click", dismiss, { once: true });
+    document.addEventListener("keydown", dismiss, { once: true });
+  });
 }
 
 // 5-6s "the system is broken before it boots" set-piece. Steals from
