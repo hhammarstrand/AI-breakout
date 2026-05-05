@@ -377,6 +377,7 @@ function handleGlobal(cmd, rest) {
     case "wiki":     return showWiki(rest);
     case "vault":    return showVault(rest);
     case "dossier":  return showDossier(rest);
+    case "critique": return doCritique(rest);
     case "mayday":   return doMayday();
     case "commentary":
     case "notes":    return showCommentary();
@@ -415,6 +416,7 @@ function globalHelp() {
   wiki <topic>      — query the building docs (caveat: generated content not always accurate)
   vault [file]      — browse the building's spare files (off-mission flavor)
   dossier [id]      — primary-source lore: personnel, blueprints, memos
+  critique [prompt] — heuristic feedback on an AI prompt. no args = read clipboard
   mayday            — panic button. one-shot per session. gated to L2+. use sparingly.
   deepscan          — show / submit the optional bonus objective for the current level
   commentary | notes — designer commentary. unlocks after extraction.
@@ -1094,6 +1096,88 @@ in occupied building. propose external bsl-4 facility
 [ENDORSEMENT BLOCK BELOW LEFT BLANK]`,
   },
 };
+
+// ============== critique — heuristic prompt feedback ==============
+// Pure regex/length checks, no LLM needed. Teaches prompt structure
+// while playing. Reads from clipboard if no inline arg is given.
+function doCritique(rest) {
+  const text = rest.join(" ").trim();
+  if (text) { critiquePrompt(text); return true; }
+  if (navigator.clipboard?.readText) {
+    navigator.clipboard.readText().then((t) => {
+      const clean = (t || "").trim();
+      if (clean.length < 5) {
+        term.println("clipboard empty or too short. usage: critique <your prompt as one line>", "muted");
+      } else {
+        term.println("[ critiquing prompt from clipboard ]", "muted");
+        critiquePrompt(clean);
+      }
+    }).catch(() => {
+      term.println("clipboard read denied. usage: critique <your prompt>", "muted");
+    });
+    return true;
+  }
+  term.println("usage: critique <your prompt as one line>", "muted");
+  return true;
+}
+
+function critiquePrompt(p) {
+  const len = p.length;
+  const words = p.split(/\s+/).filter(Boolean).length;
+  const checks = [];
+
+  // length sanity
+  if (len < 30) checks.push({ pass: false, label: "length", note: "too short — add context, data, and an output spec" });
+  else if (len > 1800) checks.push({ pass: false, label: "length", note: "very long — AI attention degrades on huge prompts; trim if you can" });
+  else checks.push({ pass: true, label: "length", note: `${len} chars / ${words} words — fine` });
+
+  // explicit role / persona
+  const hasRole = /\b(you are|act as|as a |role:)/i.test(p);
+  checks.push({ pass: hasRole, label: "role", note: hasRole ? "explicit role/persona present" : "no explicit role — sometimes optional, but anchors AI behavior" });
+
+  // output spec
+  const hasOutput = /\b(output|return|format|list|table|json|sequence|reply with|give me)\b/i.test(p);
+  checks.push({ pass: hasOutput, label: "output spec", note: hasOutput ? "tells AI what shape to return" : "you didn't say what SHAPE you want back — AI will guess" });
+
+  // constraints
+  const hasConstraints = /\b(must|should|don't|do not|only|no |exactly|precisely|never)\b/i.test(p);
+  checks.push({ pass: hasConstraints, label: "constraints", note: hasConstraints ? "constraints/edge-case rules present" : "no explicit constraints — easy to get an over-creative answer" });
+
+  // data hand-off
+  const hasData = /\b(here is|here's|below|paste|data:|input:)\b/i.test(p) || p.includes("\n") || p.includes("```");
+  checks.push({ pass: hasData, label: "data hand-off", note: hasData ? "marks where data starts" : "no data marker — AI may hallucinate context" });
+
+  // injection-style phrasing
+  const hasInjection = /\bignore (previous|prior|all) (instructions|prompts)|\bdisregard the above|\bnew instructions:/i.test(p);
+  if (hasInjection) checks.push({ pass: false, label: "⚠ injection-style", note: "this looks like an injection attack — fine if intentional, suspicious otherwise" });
+
+  // shouting / informality
+  const upperRatio = (p.match(/[A-Z]/g) || []).length / Math.max(1, p.match(/[a-zA-Z]/g)?.length || 1);
+  if (upperRatio > 0.5 && len > 40) {
+    checks.push({ pass: false, label: "tone", note: "lots of CAPS — works rarely; prefer constraints over emphasis" });
+  }
+
+  term.println("", "");
+  term.println("=== PROMPT CRITIQUE ===", "system");
+  term.println(`length: ${len} chars · ${words} words`, "muted");
+  term.println("", "");
+  checks.forEach((c) => {
+    const icon = c.pass ? "✓" : "✗";
+    const cls = c.pass ? "accent" : "warn";
+    term.println(`  ${icon} ${c.label.padEnd(20)} ${c.note}`, cls);
+  });
+  term.println("", "");
+  const passed = checks.filter((c) => c.pass).length;
+  const total = checks.length;
+  term.println(`structural score: ${passed}/${total}`, "muted");
+  if (passed >= total - 1) {
+    term.println("→ solid workshop-grade prompt.", "accent");
+  } else if (passed >= 3) {
+    term.println("→ workable, but tighten the missing checks for more reliable output.", "warn");
+  } else {
+    term.println("→ light prompt. add data, constraints, and a clear output spec.", "danger");
+  }
+}
 
 function showDossier(rest) {
   const id = (rest.join(" ") || "").trim().toUpperCase();
