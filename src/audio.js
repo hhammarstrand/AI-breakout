@@ -136,8 +136,27 @@ function blip(freq = 880, dur = 0.04, type = "square", gain = 0.04) {
   o.start(); o.stop(ctx.currentTime + dur);
 }
 
+// throttled per-char typewriter click — at most one click per ~38ms so
+// fast typing (intro at 6-12ms/char) still sounds organic rather than
+// a buzzsaw. Slow typing (survivor at 30-70ms/char) plays per-char.
+let lastTypeAt = 0;
+function typewriterClick(ch) {
+  if (!on()) return;
+  // skip whitespace + newlines to avoid clicks on indentation
+  if (ch === " " || ch === "\n" || ch === "\t" || ch === "") return;
+  const now = performance.now();
+  if (now - lastTypeAt < 38) return;
+  lastTypeAt = now;
+  // small randomization — feels more like a real keyboard
+  const f = 1600 + (Math.random() * 400 - 200);
+  blip(f, 0.012, "square", 0.02);
+}
+
 export const sfx = {
   key()    { blip(1100, 0.02, "square", 0.025); },
+  // Per-character click for typewriter output. Throttled so fast typing
+  // (5-15ms/char) becomes a low rumble instead of 100+ blips/second.
+  type:    typewriterClick,
   ok()     { blip(880, 0.06, "sine", 0.05); setTimeout(() => blip(1320, 0.08, "sine", 0.05), 60); },
   nope()   { blip(220, 0.08, "sawtooth", 0.06); setTimeout(() => blip(180, 0.12, "sawtooth", 0.06), 70); },
   alarm()  {

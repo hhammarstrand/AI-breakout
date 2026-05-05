@@ -126,6 +126,7 @@ async function typeSurvivor(term, text, charMs) {
     const ch = text[i];
     div.textContent += ch;
     term.root.scrollTop = term.root.scrollHeight;
+    if (sfxClick) sfxClick(ch);
     // longer pauses on sentence breaks for breathing/emotion
     let wait = charMs + (Math.random() * 8 - 4);
     if (ch === "." || ch === "?" || ch === "!") wait += 300;
@@ -133,6 +134,9 @@ async function typeSurvivor(term, text, charMs) {
     await new Promise((r) => setTimeout(r, Math.max(8, wait)));
   }
 }
+
+let sfxClick = null;
+import("./audio.js").then((m) => { sfxClick = m.sfx.type; }).catch(() => {});
 
 function nowStamp() {
   const d = new Date();
