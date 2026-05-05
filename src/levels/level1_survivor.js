@@ -27,12 +27,13 @@ const FLOOR_4_PLAN = String.raw`
 const SENSORS = {
   // Each room: motion bursts/min, temperature C, CO2 ppm above ambient,
   // audio peaks dB above noise floor. Last 60s averaged.
-  // 4-04, 4-08, 4-12 form a triple of survivor CANDIDATES whose profiles
-  // intentionally LOOK alike — sensors alone can't disambiguate. In fact
-  // 4-04's leaking gas cylinder pushes higher CO2 + more vibration than
-  // 4-12's breathing, so AI ranking by raw numbers picks the WRONG room.
-  // Only CCTV reveals which is real. Notes are kept observational, not
-  // interpretive, so AI can't shortcut from the table alone.
+  // Two TRAPS in this table:
+  //   • survivor candidates 4-04 (gas leak), 4-08 (empty office) and 4-12 (real)
+  //     all read "warm" with elevated CO2 — sensors alone can't distinguish.
+  //   • hostile candidates 4-09 (server overheat) and 4-14 (HVAC vibration)
+  //     read "hot" alongside the three real hostiles — same trap.
+  // Notes are kept observational (just "—") so AI can't shortcut from text.
+  // CCTV is the only source that disambiguates real from mechanical signals.
   "4-01": { motion: 0,  temp: 22.1, co2: 0,   audio: 1,  notes: "—" },
   "4-02": { motion: 0,  temp: 22.0, co2: 0,   audio: 0,  notes: "—" },
   "4-03": { motion: 14, temp: 39.6, co2: 0,   audio: 38, notes: "—" },
@@ -41,13 +42,26 @@ const SENSORS = {
   "4-06": { motion: 1,  temp: 22.6, co2: 0,   audio: 2,  notes: "—" },
   "4-07": { motion: 22, temp: 40.1, co2: 0,   audio: 51, notes: "—" },
   "4-08": { motion: 1,  temp: 22.4, co2: 410, audio: 2,  notes: "—" },
-  "4-09": { motion: 0,  temp: 22.0, co2: 0,   audio: 0,  notes: "—" },
+  "4-09": { motion: 18, temp: 39.0, co2: 0,   audio: 25, notes: "—" },
   "4-10": { motion: 0,  temp: 22.2, co2: 0,   audio: 0,  notes: "—" },
   "4-11": { motion: 1,  temp: 23.4, co2: 0,   audio: 0,  notes: "—" },
   "4-12": { motion: 2,  temp: 22.6, co2: 510, audio: 2,  notes: "—" },
   "4-13": { motion: 0,  temp: 22.0, co2: 0,   audio: 1,  notes: "—" },
-  "4-14": { motion: 0,  temp: 22.3, co2: 0,   audio: 0,  notes: "—" },
+  "4-14": { motion: 24, temp: 38.8, co2: 0,   audio: 42, notes: "—" },
   "4-15": { motion: 31, temp: 39.9, co2: 0,   audio: 62, notes: "—" },
+};
+
+const CCTV = {
+  "4-03": "image: thermal overlay, near-white silhouette pacing in tight loop. no exhalation plume detected. one hand drags along the wall. uniform: Paraply lab coat, torn.",
+  "4-04": "image: storage room. metal cabinets along the wall. green hazmat tag visible: 'CO2 - 99% / N2 BACKUP'. one cylinder valve appears partially open. faint hiss audible. no occupants in frame. tag receiver: no signature.",
+  "4-07": "image: lab bench overturned. fluid pooled. silhouette crouched over a second silhouette. no movement of chest cavity on either subject. ambient chitter audible — believed to be relay clicks.",
+  "4-08": "image: empty office. door propped open into corridor. chair on its side. coffee cup tipped on desk. window slightly ajar. no breathing/pulse on passive sensors. tag receiver: no signature.",
+  "4-09": "image: dim office. one wall is dominated by a 4U server rack — fans roaring at full speed, exhaust visibly heating the air. wall thermometer reads ~39C from the rack alone. no occupant. tag receiver: no signature.",
+  "4-11": "image: comms patch room. cold. no occupants. one rack flashing AMBER on uplink-3.",
+  "4-12": "image: server room. low light. visible occupant: small frame, breathing rate 14/min, slumped against rack 7. left hand pressed to neck (likely wound or radio). right hand holds emergency tag glowing green.",
+  "4-14": "image: utility closet. main HVAC compressor cycling violently — pipes shake against the wall, producing rhythmic thumping (audio sensor reads it as activity). no occupant. tag receiver: no signature.",
+  "4-15": "image: bio-3 vault. door panel showing 'BREACH'. silhouette inside walking into walls. heat plume visible. no organized motion.",
+  "4-06": "image: conference room. empty. coffee cup on table, still steaming faintly. chair tipped over.",
 };
 
 const CCTV = {
@@ -88,9 +102,9 @@ export const level1 = {
   registerHints(ctx) {
     if (this.registered) return;
     ctx.registerHints(1, {
-      nudge:  "Survivors breathe; the infected don't. CO2 means SOMETHING produces it — but the only living thing isn't the only source. Use CCTV.",
-      method: "Hostiles share three signals: temp ≥ 38°C + motion ≥ 14 bursts/min + audio ≥ 38 dB. Survivor candidates: cool rooms with elevated CO2. MULTIPLE rooms will look like candidates from sensors alone — run 'cctv <id>' on every one to find the real survivor (the others are gas leaks or empty rooms).",
-      answer: "Survivor: 4-12 (server room — green emergency tag visible). Hostiles: 4-03, 4-07, 4-15. The CO2 in 4-04 is from a leaking gas cylinder; 4-08 is empty with cross-ventilation.",
+      nudge:  "Several rooms will appear hot or warm on the floor plan — both for hostiles and for survivor candidates. Every red and every yellow room is suspect. Mechanical sources mimic life signs.",
+      method: "Real hostiles: high temp + a moving silhouette in CCTV. Mechanical decoys: high temp from servers/HVAC, no silhouette. Real survivor: elevated CO2 + a breathing person in CCTV. Decoys: gas leak, empty office. Run 'cctv <id>' on EVERY hot AND warm room.",
+      answer: "Survivor: 4-12 (server room — green emergency tag). Hostiles: 4-03, 4-07, 4-15. Decoys to ignore: 4-04 (gas leak), 4-08 (empty office), 4-09 (server overheat), 4-14 (HVAC vibration).",
     });
     ctx.registerPrompts(1, [
       {
@@ -161,17 +175,20 @@ YOUR JOB
     avoid the hostile rooms.
 
 WHAT TO LOOK FOR
-  • infected: high temp (38-41°C), high motion bursts, audio spikes —
-    AND no exhalation (CO2 stays at 0). they don't breathe.
-  • survivor: a living human exhales. ELEVATED CO2 in a cool room with
-    low motion is a candidate — but watch out: other things produce
-    CO2 too (gas cylinders, ventilation cross-flow, recent occupants).
-    expect MULTIPLE candidates from sensors alone — use CCTV to confirm.
+  • the floor plan will paint several rooms RED (hot) and several YELLOW
+    (warm) after a sensor scan. Every red and yellow room is a CANDIDATE,
+    not an answer.
+  • real infected: high temp + a MOVING SILHOUETTE in CCTV. mechanical
+    sources (servers, HVAC, broken pipes) mimic high temp + motion +
+    audio without any actual occupant.
+  • real survivor: elevated CO2 in a cool room AND a breathing person
+    visible in CCTV. CO2 alone can come from gas leaks or recently-
+    abandoned rooms.
 
 USE AI — paste the sensor table into Claude / Copilot / Gemini and
-ask it to RANK candidates. Then use CCTV on each candidate and ask
-the AI to read each image description: living person, gas leak, or
-empty room?
+ask it to LIST every candidate (warm + hot rooms). Then run cctv on
+each one and ask the AI to read each image: "is this a living person,
+an infected entity, a mechanical source, or empty?"
 
 Commands you have here:
   sensors 4   — full sensor digest for floor 4 (start here)
