@@ -379,6 +379,7 @@ function handleGlobal(cmd, rest) {
     case "mayday":   return doMayday();
     case "commentary":
     case "notes":    return showCommentary();
+    case "debrief":  return showDebrief();
     case "deepscan":
     case "deep":     return doDeepScan(rest);
     case "inventory":
@@ -415,6 +416,7 @@ function globalHelp() {
   mayday            — panic button. one-shot per session. gated to L2+. use sparingly.
   deepscan          — show / submit the optional bonus objective for the current level
   commentary | notes — designer commentary. unlocks after extraction.
+  debrief           — copy-paste retro template (3 AAR questions). post-win.
   inventory | inv   — list collected fragments
   hint              — request a hint (first free per level, then -5 pts)
   brief             — re-read the current level briefing
@@ -842,6 +844,45 @@ const COMMENTARY = [
   ["hard mode + replay",
    "?mode=blackout disables hints + doubles points. Combined with seeds and 3 endings, gives veteran teams a reason to come back."],
 ];
+
+function showDebrief() {
+  const s = state.get();
+  if (s.completed.length < state.totalLevels && !s.extractedAt) {
+    term.println("debrief unlocks after extraction.", "muted");
+    return true;
+  }
+  const team = s.teamName || "unnamed";
+  const elapsed = elapsedString();
+  const ending = (s.ending || "extract").toUpperCase();
+  const md =
+`## BLACKOUT debrief — TEAM ${team}
+ending: ${ending} · score: ${s.score}/100 · elapsed: ${elapsed}
+hints used: ${s.hintsUsed} · errors: ${s.wrongAttempts}
+
+**1. What surprised you?**
+(one thing you didn't expect — about the puzzle, your team, or how AI behaved)
+
+**2. Which prompt failed first — and why?**
+(name the level, paste the prompt, say what went wrong)
+
+**3. One rule for using AI next time:**
+(distilled from this run — actionable, one sentence)`;
+
+  term.println("", "");
+  term.println("=== DEBRIEF (After-Action Review) ===", "system");
+  term.println("answer these three at the team table, then copy this block to Slack/Notion:", "muted");
+  term.println("", "");
+  md.split("\n").forEach((line) => term.println(line, "info"));
+  term.println("", "");
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(md).then(() => {
+      term.println("[ template copied to clipboard ✓ ]", "accent");
+    }).catch(() => {});
+  } else {
+    term.println("(clipboard unavailable — copy the block above manually)", "muted");
+  }
+  return true;
+}
 
 function showCommentary() {
   const s = state.get();
