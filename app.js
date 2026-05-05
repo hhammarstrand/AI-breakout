@@ -376,6 +376,7 @@ function handleGlobal(cmd, rest) {
     case "reader":   return toggleReader();
     case "wiki":     return showWiki(rest);
     case "vault":    return showVault(rest);
+    case "dossier":  return showDossier(rest);
     case "mayday":   return doMayday();
     case "commentary":
     case "notes":    return showCommentary();
@@ -413,6 +414,7 @@ function globalHelp() {
   reader            — toggle reader mode (kills flicker/scanlines, bumps font)
   wiki <topic>      — query the building docs (caveat: generated content not always accurate)
   vault [file]      — browse the building's spare files (off-mission flavor)
+  dossier [id]      — primary-source lore: personnel, blueprints, memos
   mayday            — panic button. one-shot per session. gated to L2+. use sparingly.
   deepscan          — show / submit the optional bonus objective for the current level
   commentary | notes — designer commentary. unlocks after extraction.
@@ -902,6 +904,220 @@ function showCommentary() {
     term.println("", "");
   });
   term.println("share your retro at the team table. then come back to base camp.", "muted");
+  return true;
+}
+
+// ============== dossier — primary-source lore ==============
+// Heavier worldbuilding than vault — meant to be readable mid-game by
+// curious teams. Each entry is styled as a scan/photocopy with [REDACTED]
+// blocks, deliberate fragments, and timestamp metadata.
+const DOSSIER = {
+  "P-NORDLUND": {
+    title: "PERSONNEL FILE — NORDLUND, K.",
+    body:
+`PARAPLY BIOTEKNIK AB — confidential
+employee #00412
+═══════════════════════════════════════════════════════
+name        Karina Nordlund, PhD
+role        Senior Microbiologist, Bio-3 lead
+joined      2019-04
+clearance   Class-IV  (last review 2025-11)
+notes       primary investigator on project AEGIS.
+            cited mycology research at Uppsala (2017),
+            three patents in cellulose-degradation
+            substrates. internal review (2024) flagged
+            risk-tolerance as "outside guideline range".
+            board declined to act on flag.
+emergency   tag K-NORDLUND-01 (active, floor 4)
+next of kin [REDACTED]`,
+  },
+  "BP-BIO3": {
+    title: "BLUEPRINT FRAGMENT — BIO-3 VAULT",
+    body:
+`floor 4 / sector E / file BP-2023-04-bio3.dwg (excerpt)
+
+   ┌──────────────┐
+   │              │  AIRLOCK     ╲
+   │   SUBSTRATE  │  (positive   ╲ ── corridor 4-E
+   │     STORE    ├──pressure)   ╱
+   │              │              ╱
+   └──────┬───────┘ ┌─────────┐
+          │  vent   │   BIO-3 │
+          │  shaft  │  VAULT  │
+          └─────────┴─────────┘
+                       ↑ thermite charge bay (floor 5)
+
+dimensions  4.2 × 3.8 m
+ventilation positive-pressure HEPA, dedicated stack
+ignition    thermite array — floor-5 ceiling-mount, 4 charges
+review      annual; last 2024-11. PASSED with notes [REDACTED]`,
+  },
+  "M-WEISS-2026-02-04": {
+    title: "INTERNAL MEMO — Weiss to Ops",
+    body:
+`from   s.weiss@paraply-bio.example
+to     ops-floor4@paraply-bio.example
+date   2026-02-04 17:42
+re     concerns re: AEGIS proceeding to class-iv
+
+i'm flagging this in writing now because the verbal
+flag in last week's standup didn't make the minutes.
+the substrate behaves as nordlund describes when
+isolated to plant matter. she also showed me the
+keratin-affinity test. the substrate shifted feeding
+preference within 9 minutes. nine.
+
+i am not comfortable with a class-iv trial in a
+building with people in it.
+
+if anyone asks: i said no, in writing, on this date.
+- s.weiss`,
+  },
+  "BR-2026-02-11": {
+    title: "BOARD MINUTES (REDACTED) — Aegis approval",
+    body:
+`paraply bioteknik board meeting — 2026-02-11
+minute item 7: project AEGIS — class-iv trial proposal
+
+motion to approve trial in helix tower bio-3 vault.
+proposer: [REDACTED]
+seconder: [REDACTED]
+
+discussion (abridged):
+  - chair noted commercial timeline pressure from
+    [REDACTED] and the [REDACTED] partnership window.
+  - cfo confirmed insurance carrier had been notified
+    "in general terms".
+  - lead biosafety officer s.weiss raised written
+    objection (memo dated 2026-02-04). objection NOTED.
+  - dr. nordlund presented containment plan. board
+    accepted plan as "industry-standard or better".
+
+vote: 6 in favour, 1 against (s.weiss), 1 abstain.
+motion CARRIED. trial proceeds 2026-02-18.`,
+  },
+  "SEC-2026-03-08": {
+    title: "SECURITY LOG — incident night",
+    body:
+`helix tower / floor 1 reception
+guard on duty: jan lindqvist (id 0287)
+date: 2026-03-08 (night shift, 22:00 → 06:00)
+
+22:14   nordlund badged in via service entrance.
+        carried two equipment cases. routine.
+22:41   ventilation status changed (floor 4) —
+        building system message: "positive pressure
+        adjustment, scheduled". cleared automatically.
+23:02   nordlund called reception. asked if guard
+        could "stop monitoring floor 4 cameras
+        for an hour". guard refused per protocol.
+23:04   call disconnected.
+23:08   floor 4 access logs show four badge swipes
+        in three minutes — all nordlund's badge.
+23:14   "containment alert" warning at reception
+        kiosk. cleared by remote ops within 8s.
+23:15   building autonomic systems began behaving
+        unpredictably. guard evacuated to lobby.
+23:22   guard called paraply on-call. no answer.
+        called police. response unit dispatched.
+        operation lifeline declared T+0 from this
+        timestamp.`,
+  },
+  "TKT-VEGA-019": {
+    title: "IT TICKET — VEGA personality regression",
+    body:
+`paraply ops it — ticket #VEGA-019
+status      OPEN — won't fix
+priority    low
+opened      2025-09-12
+opener      a.svensson (BIM ops)
+component   VEGA assistant (operations console)
+
+DESCRIPTION
+since v3 personality update, VEGA disagrees with
+CONTROL on hint phrasing about 60% of the time.
+this is by design per focus-group feedback (warmth
+0.78, sarcasm 0.22, authority 0.41) but it confuses
+junior operators who can't tell which voice to trust.
+
+REQUESTED CHANGE
+either (a) dampen sarcasm to 0.10, or (b) add an
+indicator on which voice has higher confidence on
+the current dispatch.
+
+RESOLUTION
+"working as intended. operators are expected to
+weigh both voices. closing." — product mgmt.`,
+  },
+  "PO-AEGIS-44": {
+    title: "PURCHASE ORDER — Aegis substrate procurement",
+    body:
+`PO-AEGIS-44   approved 2025-08-20
+
+item                                              qty  amount (EUR)
+─────────────────────────────────────────────────────────────────────
+mycelial substrate, parental strain (vendor: [REDACTED])
+                                                    1    18,400
+keratin assay kit                                  20       960
+class-iv hood, additional unit (bio-3)              1    62,000
+thermite suppression cartridge, replacement         4    72,800
+emergency tag, K-series, batch                     12        96
+─────────────────────────────────────────────────────────────────────
+total                                                  154,256
+
+routed to: nordlund, k. (project lead)
+approval:  [REDACTED]
+note:      PO unusual size flagged by finance, override granted.`,
+  },
+  "RA-AEGIS": {
+    title: "RISK ASSESSMENT — project AEGIS (excerpt)",
+    body:
+`risk assessment, project AEGIS — class-iv trial
+prepared by  s.weiss, biosafety officer
+dated        2026-02-04   (PRE-APPROVAL)
+
+identified risks (severity: 1-5):
+
+  R-01  containment breach via vent shaft       4
+  R-02  substrate keratin-affinity in aerosol   5
+  R-03  failure of positive-pressure HEPA       3
+  R-04  thermite ignition delay >60 min         4
+  R-05  remote ops loses link mid-incident      3
+  R-06  human exposure during sample handling   5
+
+aggregate score: 24/30 (HIGH)
+
+recommendation: do not proceed with class-iv trial
+in occupied building. propose external bsl-4 facility
+([REDACTED]) for at least 6-month observation.
+
+[ENDORSEMENT BLOCK BELOW LEFT BLANK]`,
+  },
+};
+
+function showDossier(rest) {
+  const id = (rest.join(" ") || "").trim().toUpperCase();
+  if (!id) {
+    term.println("", "");
+    term.println("DOSSIER — primary-source lore", "system");
+    Object.entries(DOSSIER).forEach(([k, v]) => {
+      term.println(`  ${k.padEnd(22)}  ${v.title}`, "muted");
+    });
+    term.println("", "");
+    term.println("type: dossier <id>", "muted");
+    return true;
+  }
+  const f = DOSSIER[id];
+  if (!f) {
+    term.println(`dossier: no such file '${id}'.`, "muted");
+    return true;
+  }
+  term.println("", "");
+  term.println("┌" + "─".repeat(74) + "┐", "muted");
+  term.println(`│ ${f.title.padEnd(72)} │`, "system");
+  term.println("├" + "─".repeat(74) + "┤", "muted");
+  f.body.split("\n").forEach((l) => term.println("│ " + (l + " ".repeat(72)).slice(0, 72) + " │", "info"));
+  term.println("└" + "─".repeat(74) + "┘", "muted");
   return true;
 }
 
