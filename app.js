@@ -1697,9 +1697,17 @@ async function coldOpen() {
 
 function showBroadcastView() {
   document.body.innerHTML = "";
-  document.body.style.background = "#00ff00"; // chroma-key lime
+  // Background mode: default lime for OBS chroma-key. Override with
+  // ?view=broadcast&bg=dark for direct projection (dark) or
+  // &bg=transparent for OBS browser sources that handle transparency.
+  const bg = (new URLSearchParams(location.search).get("bg") || "lime").toLowerCase();
+  const bgColor = bg === "dark" ? "#04080a"
+                : bg === "transparent" ? "rgba(0,0,0,0)"
+                : "#00ff00";
+  document.body.style.background = bgColor;
   document.body.style.margin = "0";
   document.body.style.height = "100vh";
+  if (bg === "transparent") document.documentElement.style.background = "rgba(0,0,0,0)";
 
   const wrap = document.createElement("div");
   wrap.style.cssText = `
