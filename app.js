@@ -1558,6 +1558,14 @@ async function boot() {
     return;
   }
 
+  // Broadcast view: ?view=broadcast — chroma-key-ready lower-third overlay
+  // for projection. Polls localStorage, so opening this in a SECOND tab on
+  // the playing team's laptop and dragging to a projector "just works".
+  if (new URLSearchParams(location.search).get("view") === "broadcast") {
+    showBroadcastView();
+    return;
+  }
+
   // Resume the AudioContext on EVERY user gesture (capture phase so we
   // catch the event before terminal handlers preventDefault). Cheap when
   // already running. Some browsers re-suspend silently and lazy resume
@@ -1685,6 +1693,80 @@ async function coldOpen() {
   await wait(500);
   if (ui.crt) ui.crt.classList.remove("cold-open");
   term.clear();
+}
+
+function showBroadcastView() {
+  document.body.innerHTML = "";
+  document.body.style.background = "#00ff00"; // chroma-key lime
+  document.body.style.margin = "0";
+  document.body.style.height = "100vh";
+
+  const wrap = document.createElement("div");
+  wrap.style.cssText = `
+    position: fixed; left: 0; right: 0; bottom: 0;
+    padding: 18px 36px; box-sizing: border-box;
+    background: rgba(4,12,14,0.92);
+    border-top: 2px solid #6cf0c2;
+    color: #b8ffd0;
+    font-family: "IBM Plex Mono","JetBrains Mono","Courier New",monospace;
+    text-shadow: 0 0 6px rgba(108,240,194,0.6);
+  `;
+  wrap.innerHTML = `
+    <div id="bc-row1" style="font-size:34px;letter-spacing:0.18em;font-weight:700;display:flex;gap:32px;align-items:baseline;">
+      <span style="color:#ff5a5a;">BLACKOUT</span>
+      <span id="bc-team">TEAM —</span>
+      <span style="color:#5fa97f;font-size:24px;">·</span>
+      <span id="bc-stage" style="color:#6cf0c2;">L0</span>
+      <span style="color:#5fa97f;font-size:24px;">·</span>
+      <span id="bc-time">00:00</span>
+      <span style="color:#5fa97f;font-size:24px;">·</span>
+      <span id="bc-score">0 pts</span>
+    </div>
+    <div id="bc-row2" style="font-size:15px;letter-spacing:0.14em;color:#cfe6df;margin-top:6px;display:flex;gap:24px;text-transform:uppercase;">
+      <span>seed <b id="bc-seed" style="color:#6cf0c2;">—</b></span>
+      <span>thermite <b id="bc-thermite" style="color:#ff5a5a;">60:00</b></span>
+      <span>hints <b id="bc-hints" style="color:#ffcd5b;">0</b></span>
+      <span>errors <b id="bc-errors" style="color:#ff5a5a;">0</b></span>
+      <span id="bc-mode" style="color:#ff5a5a;font-weight:700;display:none;">☠ HARD</span>
+    </div>
+    <div id="bc-bar" style="margin-top:10px;height:6px;background:rgba(255,255,255,0.08);border:1px solid #2f5d49;">
+      <div id="bc-bar-fill" style="height:100%;width:0;background:#6cf0c2;transition:width 0.6s;"></div>
+    </div>
+  `;
+  document.body.appendChild(wrap);
+
+  function tick() {
+    const s = state.get();
+    const m = getMission();
+    const team = (s.teamName || "(unnamed)").toUpperCase();
+    const stage = s.completed.length === 4 ? "EXTRACTED" : `L${s.level || 0}`;
+    const elapsed = (() => {
+      if (!s.containmentStart) return "00:00";
+      const ref = s.extractedAt || Date.now();
+      const sec = Math.max(0, Math.floor((ref - s.containmentStart) / 1000));
+      return `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
+    })();
+    const remain = state.containmentRemainingMs();
+    const therm = (() => {
+      const sec = Math.max(0, Math.ceil(remain / 1000));
+      return `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
+    })();
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set("bc-team", "TEAM " + team);
+    set("bc-stage", stage);
+    set("bc-time", elapsed);
+    set("bc-score", `${s.score} pts`);
+    set("bc-seed", m.seed);
+    set("bc-thermite", therm);
+    set("bc-hints", s.hintsUsed);
+    set("bc-errors", s.wrongAttempts);
+    const mode = document.getElementById("bc-mode");
+    if (mode) mode.style.display = state.isHardMode() ? "" : "none";
+    const fill = document.getElementById("bc-bar-fill");
+    if (fill) fill.style.width = `${(s.completed.length / 4) * 100}%`;
+  }
+  tick();
+  setInterval(() => { state.load(); tick(); }, 1000);
 }
 
 function showFacilitatorView(payload) {
