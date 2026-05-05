@@ -44,7 +44,16 @@ export const state = {
   },
   get() { return cache; },
 
-  addScore(n) { cache.score = Math.max(0, cache.score + n); this.save(); },
+  addScore(n) {
+    // hard mode (?mode=blackout) doubles positive points; penalties unchanged
+    const mult = (n > 0 && this.isHardMode()) ? 2 : 1;
+    cache.score = Math.max(0, cache.score + n * mult);
+    this.save();
+  },
+  isHardMode() {
+    try { return new URLSearchParams(location.search).get("mode") === "blackout"; }
+    catch { return false; }
+  },
   addItem(item) {
     if (!cache.inventory.includes(item)) {
       cache.inventory.push(item);

@@ -486,7 +486,8 @@ function buildShareLine() {
   const s = state.get();
   const team = s.teamName || "UNNAMED";
   const stage = s.completed.length === 4 ? "EXTRACTED" : `L${s.level || 0}`;
-  return `[BLACKOUT] TEAM ${team} · ${stage} · ${s.score} pts · ${elapsedString()} · ${s.hintsUsed} hints · ${s.wrongAttempts} errors`;
+  const hard = state.isHardMode() ? "☠ " : "";
+  return `[BLACKOUT] ${hard}TEAM ${team} · ${stage} · ${s.score} pts · ${elapsedString()} · ${s.hintsUsed} hints · ${s.wrongAttempts} errors`;
 }
 
 function buildStatusUrl() {
@@ -819,6 +820,10 @@ function giveHint() {
     term.println("no hints available here.", "muted");
     return true;
   }
+  if (state.isHardMode()) {
+    term.println("[ HARD MODE — hint ladder disabled. you're on your own. ]", "danger");
+    return true;
+  }
   const h = nextHint(lvl);
   if (h.exhausted) {
     term.println("[ no more hints — you've seen all 3 tiers ]", "muted");
@@ -880,6 +885,7 @@ async function boot() {
   ui.audioBtn.textContent = state.get().audio ? "SFX ON" : "SFX OFF";
   ui.audioBtn.addEventListener("click", () => toggleAudio());
   applyReaderMode();
+  if (state.isHardMode() && ui.crt) ui.crt.classList.add("hard-mode");
 
   document.getElementById("prompt-form").addEventListener("submit", (e) => {
     e.preventDefault();
