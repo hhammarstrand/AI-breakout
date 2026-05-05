@@ -1697,13 +1697,13 @@ async function coldOpen() {
 
 function showBroadcastView() {
   document.body.innerHTML = "";
-  // Background mode: default lime for OBS chroma-key. Override with
-  // ?view=broadcast&bg=dark for direct projection (dark) or
-  // &bg=transparent for OBS browser sources that handle transparency.
-  const bg = (new URLSearchParams(location.search).get("bg") || "lime").toLowerCase();
-  const bgColor = bg === "dark" ? "#04080a"
+  // Background mode: default dark (workshop projection). Opt in to
+  // ?view=broadcast&bg=lime for OBS chroma-key, or &bg=transparent for
+  // OBS browser sources that handle transparency natively.
+  const bg = (new URLSearchParams(location.search).get("bg") || "dark").toLowerCase();
+  const bgColor = bg === "lime" ? "#00ff00"
                 : bg === "transparent" ? "rgba(0,0,0,0)"
-                : "#00ff00";
+                : "#04080a";
   document.body.style.background = bgColor;
   document.body.style.margin = "0";
   document.body.style.height = "100vh";
