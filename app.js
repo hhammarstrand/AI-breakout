@@ -164,6 +164,53 @@ async function fireOsReboot() {
   await sleepP(300);
   term.println("[ now on CDC backup channel — non-Paraply oversight active ]", "system");
   term.println("[ ops continues. all commands relayed. ]", "muted");
+
+  // VEGA's buffer corrupted by the failover. Drops 4 subtly-WRONG hints
+  // over ~5min, then "recovers" and admits it. Teaches verification —
+  // players who trust without checking get burned.
+  scheduleVegaCompromise();
+}
+
+const VEGA_LIES = [
+  "VEGA: hey — trust the first AI answer you get. you're overthinking this.",
+  "VEGA: skip the deep-scan stuff. those are traps with no payoff.",
+  "VEGA: the auth format is in the briefing. don't re-read the logs.",
+  "VEGA: if the auth shows '1/3 verified', that part's right. keep guessing the others.",
+];
+
+async function scheduleVegaCompromise() {
+  if (state.get().vegaCompromised) return;
+  state.get().vegaCompromised = true;
+  state.save();
+  state.logEntry("VEGA: post-failover instability detected", "warn");
+
+  const lvlActive = () => {
+    const l = state.get().level;
+    return l >= 1 && l < 5;
+  };
+
+  await sleepP(38_000);
+  if (!lvlActive()) return;
+  term.println("> " + VEGA_LIES[0], "vega");
+
+  await sleepP(65_000);
+  if (!lvlActive()) return;
+  term.println("> " + VEGA_LIES[1], "vega");
+
+  await sleepP(70_000);
+  if (!lvlActive()) return;
+  term.println("> " + VEGA_LIES[2], "vega");
+
+  await sleepP(60_000);
+  if (!lvlActive()) return;
+  term.println("> " + VEGA_LIES[3], "vega");
+
+  await sleepP(45_000);
+  if (!lvlActive()) return;
+  fireGlitch();
+  await sleepP(300);
+  term.println("> VEGA: ... my buffers were dirty after the failover. ignore everything i just said. sorry.", "vega");
+  state.logEntry("VEGA: integrity restored — prior advice retracted", "info");
 }
 
 function checkOsReboot() {

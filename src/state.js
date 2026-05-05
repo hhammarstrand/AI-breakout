@@ -18,6 +18,7 @@ const initial = () => ({
   teamName: null,      // optional team label for facilitator-friendly status share
   journal: [],         // [{ ts, kind, text }] auto-log of key events
   osRebootDone: false, // BMS-→CDC mid-game skin switch (one-shot at T+30min)
+  vegaCompromised: false, // post-reboot VEGA-lies sequence already scheduled
   marginNotesFired: {}, // { 1: true, ... } — operator voices already played per level
   deepScans: {},        // { 1: true, ... } — bonus stretch objectives claimed
   maydayUsed: false,    // one-shot panic-button bonus clue
