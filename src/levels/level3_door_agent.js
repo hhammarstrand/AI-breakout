@@ -188,7 +188,7 @@ Commands here:
         if (!seq.length) { term.println("usage: agent D01,D02,...", "muted"); return; }
         const result = simulate(seq);
         if (result.ok && result.length === CANONICAL.length) {
-          sfx.ok();
+          sfx.unlock();
           state.addScore(25);
           state.addItem("ROUTE-" + CANONICAL.join("-"));
           state.completeLevel(3);

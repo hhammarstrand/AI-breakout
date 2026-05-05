@@ -301,7 +301,7 @@ Commands you have here:
         const setEqual = marks.hostile.size === HOSTILES.size &&
           [...marks.hostile].every((r) => HOSTILES.has(r));
         if (survivorOk && setEqual) {
-          sfx.ok();
+          sfx.unlock();
           state.addScore(25);
           state.addItem("ROOM-12");
           state.completeLevel(1);

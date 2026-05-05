@@ -153,6 +153,38 @@ export const sfx = {
     }
   },
   save()   { blip(1500, 0.04, "square", 0.04); setTimeout(() => blip(1200, 0.06, "square", 0.04), 50); },
+
+  // ========= rich event stings (Tier S phase 5) =========
+  // unlock: triumphant rising arpeggio on level/sub-objective complete
+  unlock() {
+    if (!on()) return;
+    blip(523, 0.07, "triangle", 0.06);                                 // C5
+    setTimeout(() => blip(659, 0.07, "triangle", 0.06),  90);          // E5
+    setTimeout(() => blip(784, 0.10, "triangle", 0.07), 180);          // G5
+    setTimeout(() => blip(1047, 0.18, "triangle", 0.07), 270);         // C6
+  },
+  // bigwrong: heavier "rejected" stinger for important rejections (L4 auth)
+  bigwrong() {
+    if (!on()) return;
+    blip(330, 0.10, "sawtooth", 0.07);
+    setTimeout(() => blip(247, 0.14, "sawtooth", 0.07), 100);
+    setTimeout(() => blip(196, 0.22, "sawtooth", 0.06), 240);
+  },
+  // breach: dramatic "containment override accepted" fanfare for L4 success
+  breach() {
+    if (!on()) return;
+    // bass swell
+    blip(110, 0.4, "sine",   0.06);
+    blip(165, 0.4, "sine",   0.05);
+    // ascending lead
+    setTimeout(() => blip(523, 0.10, "square", 0.05),   0);
+    setTimeout(() => blip(659, 0.10, "square", 0.05), 110);
+    setTimeout(() => blip(784, 0.10, "square", 0.05), 220);
+    setTimeout(() => blip(988, 0.18, "square", 0.06), 330);
+    setTimeout(() => blip(1319,0.30, "square", 0.06), 540);
+    // closing chord
+    setTimeout(() => { blip(523,0.5,"triangle",0.04); blip(659,0.5,"triangle",0.04); blip(784,0.5,"triangle",0.04); }, 900);
+  },
 };
 
 // Plays morse audibly using short/long beeps. dits=120ms longs=360ms gap=120ms letter-gap=360ms word-gap=720ms

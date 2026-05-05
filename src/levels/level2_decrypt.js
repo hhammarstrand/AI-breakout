@@ -210,7 +210,7 @@ Commands:
         const guess = (args.join(" ") || "").trim().toUpperCase();
         if (!guess) { term.println("usage: submit <codename>", "muted"); return; }
         if (guess === ANSWER) {
-          sfx.ok();
+          sfx.unlock();
           state.addScore(25);
           state.addItem(ANSWER);
           state.completeLevel(2);

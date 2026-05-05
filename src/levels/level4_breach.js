@@ -125,7 +125,7 @@ Commands: inventory / radio / play morse / auth <code> / brief / hint`,
         await sleep(700 + Math.random() * 800);
 
         if (guess === AUTH) {
-          sfx.ok();
+          sfx.breach();
           state.addScore(25);
           state.addItem(AUTH);
           state.completeLevel(4);
@@ -141,7 +141,7 @@ Commands: inventory / radio / play morse / auth <code> / brief / hint`,
         for (let i = 0; i < expected.length; i++) {
           if (actual[i] === expected[i]) correctCount++;
         }
-        sfx.nope();
+        sfx.bigwrong();
         state.get().wrongAttempts++;
         state.addScore(-2);
         state.save();
