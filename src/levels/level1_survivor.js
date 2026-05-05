@@ -64,17 +64,6 @@ const CCTV = {
   "4-06": "image: conference room. empty. coffee cup on table, still steaming faintly. chair tipped over.",
 };
 
-const CCTV = {
-  "4-03": "image: thermal overlay, near-white silhouette pacing in tight loop. no exhalation plume detected. one hand drags along the wall. uniform: Paraply lab coat, torn.",
-  "4-04": "image: storage room. metal cabinets along the wall. green hazmat tag visible: 'CO2 - 99% / N2 BACKUP'. one cylinder valve appears partially open. faint hiss audible. no occupants in frame. tag receiver: no signature.",
-  "4-07": "image: lab bench overturned. fluid pooled. silhouette crouched over a second silhouette. no movement of chest cavity on either subject. ambient chitter audible — believed to be relay clicks.",
-  "4-08": "image: empty office. door propped open into corridor. chair on its side. coffee cup tipped on desk. window slightly ajar. no breathing/pulse on passive sensors. tag receiver: no signature.",
-  "4-11": "image: comms patch room. cold. no occupants. one rack flashing AMBER on uplink-3.",
-  "4-12": "image: server room. low light. visible occupant: small frame, breathing rate 14/min, slumped against rack 7. left hand pressed to neck (likely wound or radio). right hand holds emergency tag glowing green.",
-  "4-15": "image: bio-3 vault. door panel showing 'BREACH'. silhouette inside walking into walls. heat plume visible. no organized motion.",
-  "4-06": "image: conference room. empty. coffee cup on table, still steaming faintly. chair tipped over.",
-};
-
 const ROOMS = Object.keys(SENSORS);
 const SURVIVOR = "4-12";
 const HOSTILES = new Set(["4-03", "4-07", "4-15"]);
