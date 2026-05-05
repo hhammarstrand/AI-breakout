@@ -21,6 +21,7 @@ const initial = () => ({
   vegaCompromised: false, // post-reboot VEGA-lies sequence already scheduled
   ending: null,         // "extract" | "quarantine" | "purge" — branching outro
   marginNotesFired: {}, // { 1: true, ... } — operator voices already played per level
+  ghostNudgesFired: {}, // { 1: true, ... } — idle-detector beats already played per level
   deepScans: {},        // { 1: true, ... } — bonus stretch objectives claimed
   maydayUsed: false,    // one-shot panic-button bonus clue
   bestRun: null,        // { timeSec, score, hintsUsed, wrongAttempts, sig, at }

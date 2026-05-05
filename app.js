@@ -213,6 +213,58 @@ async function scheduleVegaCompromise() {
   state.logEntry("VEGA: integrity restored — prior advice retracted", "info");
 }
 
+// Idle-detector ghost nudge. After 300s of no input on an active level,
+// VEGA whispers a subtly-wrong tip. 60s later, CONTROL corrects. Turns
+// frustration into a story beat instead of pure silence. Fires once per
+// level. Resets the per-level "no input" clock when player types.
+const GHOST_NUDGES = {
+  1: {
+    vega:    "VEGA: trust the room with the highest CO2. that's always your survivor.",
+    control: "CONTROL: negative. high CO2 can come from gas cylinders, ventilation, recent occupants. cross-reference with cctv.",
+  },
+  2: {
+    vega:    "VEGA: the longest log probably has the codename. start there, ignore the short ones.",
+    control: "CONTROL: that's not how this works. read what each decoded log SAYS, don't measure their length.",
+  },
+  3: {
+    vega:    "VEGA: skip the locked-door check. one of them is probably an oversight.",
+    control: "CONTROL: absolutely not. locked is locked. filter all of them out before BFS, then run.",
+  },
+  4: {
+    vega:    "VEGA: if the strain is hard to decode, guess a common 2-letter combo. you have a few tries.",
+    control: "CONTROL: each wrong auth submission costs score. decode the morse properly first — even bad AI handles morse trivially.",
+  },
+};
+
+let ghostNudgeStage = null; // null | "vega-fired" — tracks two-step beat in flight
+let ghostNudgeFiredAt = 0;
+function checkGhostNudge() {
+  const lvl = state.get().level;
+  if (lvl < 1 || lvl > 4) { ghostNudgeStage = null; return; }
+  const fired = state.get().ghostNudgesFired || {};
+  if (fired[lvl]) return;
+  const idle = Date.now() - lastInputAt;
+  if (ghostNudgeStage === null && idle >= 300_000) {
+    // VEGA fires the wrong tip
+    const n = GHOST_NUDGES[lvl];
+    if (!n) return;
+    term.println("> " + n.vega, "vega");
+    state.logEntry(`ghost nudge L${lvl}: VEGA fired (idle 300s)`, "warn");
+    ghostNudgeStage = "vega-fired";
+    ghostNudgeFiredAt = Date.now();
+  } else if (ghostNudgeStage === "vega-fired" && Date.now() - ghostNudgeFiredAt >= 60_000) {
+    // CONTROL corrects 60s later
+    const n = GHOST_NUDGES[lvl];
+    if (!n) return;
+    term.println("> " + n.control, "control");
+    state.logEntry(`ghost nudge L${lvl}: CONTROL corrected`, "info");
+    fired[lvl] = true;
+    state.get().ghostNudgesFired = fired;
+    state.save();
+    ghostNudgeStage = null;
+  }
+}
+
 function checkOsReboot() {
   const s = state.get();
   if (s.osRebootDone) {
@@ -338,7 +390,9 @@ function suggestCommand(input) {
   return null;
 }
 
+let lastInputAt = Date.now();
 function dispatch(line) {
+  lastInputAt = Date.now();
   sfx.key();
   const args = parseCommand(line);
   const cmd = (args[0] || "").toLowerCase();
@@ -1410,7 +1464,7 @@ async function boot() {
     if (!document.hidden) ensureAudioRunning();
   });
 
-  setInterval(() => { updateTimer(); updateHeartbeat(); checkOsReboot(); }, 1000);
+  setInterval(() => { updateTimer(); updateHeartbeat(); checkOsReboot(); checkGhostNudge(); }, 1000);
   updateTimer();
   checkOsReboot();
 
