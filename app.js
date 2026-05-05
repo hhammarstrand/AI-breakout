@@ -377,6 +377,8 @@ function handleGlobal(cmd, rest) {
     case "wiki":     return showWiki(rest);
     case "vault":    return showVault(rest);
     case "mayday":   return doMayday();
+    case "commentary":
+    case "notes":    return showCommentary();
     case "deepscan":
     case "deep":     return doDeepScan(rest);
     case "inventory":
@@ -412,6 +414,7 @@ function globalHelp() {
   vault [file]      — browse the building's spare files (off-mission flavor)
   mayday            — panic button. one-shot per session. gated to L2+. use sparingly.
   deepscan          — show / submit the optional bonus objective for the current level
+  commentary | notes — designer commentary. unlocks after extraction.
   inventory | inv   — list collected fragments
   hint              — request a hint (first free per level, then -5 pts)
   brief             — re-read the current level briefing
@@ -809,6 +812,55 @@ async function doMayday() {
   term.println("> " + clue, "vega");
   await wait(700);
   term.println("[ channel closed. don't expect this again. ]", "muted");
+  return true;
+}
+
+// ============== commentary — designer notes (post-win) ==============
+const COMMENTARY = [
+  ["scenario",
+   "Resident Evil-inspired survival horror set inside a remote SSH session. The horror isn't gore — it's the tower acting unpredictably while one tagged person waits for you to figure things out. Operators feel the distance."],
+  ["L1 — sensors + CCTV synthesis",
+   "Sensor table alone gives 8 candidates. Floor plan shows colors but the 4-04 'gas leak' decoy reads MORE alive than the real survivor. The lesson: AI ranks confidently from limited data; humans must keep feeding it more sources before trusting the rank."],
+  ["L2 — ciphers + prompt injection",
+   "Four ciphers because ONE would be too procedural. Log4 contains a real prompt-injection attack written to make any AI confidently report HELIOS as the answer. Teams who blindly trust 'AI says X' get burned. This is the highest-impact AI-safety lesson in the game."],
+  ["L3 — code + verification",
+   "BFS is the right tool. The trap is that LLMs will happily generate a path through hostile rooms if you don't pre-filter the graph. Lesson: tell the model the constraints explicitly, then RUN the code rather than trust manual tracing of its output."],
+  ["L4 — multi-fragment composition",
+   "Format is hidden inside a decoded log so you can't bypass earlier work. Two-phase auth + 'X/3 segments verified' partial-match teaches granular verification: AI may have ONE part right and others wrong, and confident submission costs a penalty."],
+  ["CONTROL vs VEGA",
+   "Two voices that disagree per level. CONTROL gives the by-the-book/wrong answer; VEGA points at the real trap. Players learn to weigh authority against context — exactly the skill needed when an AI sounds confident."],
+  ["seeded missions",
+   "?seed=teamX randomizes codename + strain so two teams can't share auth codes. Workshop facilitators announce one seed per team."],
+  ["tiered hints",
+   "NUDGE (free), METHOD (-5), ANSWER (-15). The slowest team always finishes; the fastest pays nothing. Score reflects how independently you got there."],
+  ["wiki / hallucination trap",
+   "wiki entries for HELIOS / SEAFOAM / K2 are confidently FAKE. They have a quiet '[auto-generated stub]' footer that's easy to miss. Players who copy-paste wiki output as ground truth get burned — same lesson as the prompt-injection log, different surface."],
+  ["set-pieces",
+   "Cold-open fake boot-failure (first 30s decide if teams lean in). OS-reboot at T+30:00 (mid-game pivot, BMS→CDC amber skin). Post-reboot VEGA compromise (4 subtly-wrong hints over 5 min, then she admits it). All teach 'verify even trusted channels'."],
+  ["mayday + deep scans",
+   "mayday: one-shot panic clue, theatrically expensive. deepscans: optional +5 bonuses per level for thorough teams. Both are stretch surface area for fast/curious teams."],
+  ["hard mode + replay",
+   "?mode=blackout disables hints + doubles points. Combined with seeds and 3 endings, gives veteran teams a reason to come back."],
+];
+
+function showCommentary() {
+  const s = state.get();
+  if (s.completed.length < state.totalLevels && !s.extractedAt) {
+    term.println("commentary unlocks after extraction.", "muted");
+    return true;
+  }
+  term.println("", "");
+  term.println("=== DESIGNER COMMENTARY ===", "system");
+  term.println("(spoilers — read after your team has fully debriefed)", "muted");
+  term.println("", "");
+  COMMENTARY.forEach(([title, body], i) => {
+    term.println(`[${String(i + 1).padStart(2, "0")}] ${title}`, "accent");
+    body.split(/(.{1,72}( |$))/g).filter((s) => s.trim()).forEach((line) => {
+      term.println("     " + line.trim(), "info");
+    });
+    term.println("", "");
+  });
+  term.println("share your retro at the team table. then come back to base camp.", "muted");
   return true;
 }
 
