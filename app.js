@@ -436,6 +436,7 @@ function handleGlobal(cmd, rest) {
     case "commentary":
     case "notes":    return showCommentary();
     case "debrief":  return showDebrief();
+    case "report":   return showReport();
     case "deepscan":
     case "deep":     return doDeepScan(rest);
     case "inventory":
@@ -475,6 +476,7 @@ function globalHelp() {
   deepscan          — show / submit the optional bonus objective for the current level
   commentary | notes — designer commentary. unlocks after extraction.
   debrief           — copy-paste retro template (3 AAR questions). post-win.
+  report            — open a printable incident-report souvenir (post-win).
   inventory | inv   — list collected fragments
   hint              — request a hint (first free per level, then -5 pts)
   brief             — re-read the current level briefing
@@ -902,6 +904,124 @@ const COMMENTARY = [
   ["hard mode + replay",
    "?mode=blackout disables hints + doubles points. Combined with seeds and 3 endings, gives veteran teams a reason to come back."],
 ];
+
+// ============== report — printable incident-report souvenir ==============
+function showReport() {
+  const s = state.get();
+  if (s.completed.length < state.totalLevels && !s.extractedAt) {
+    term.println("incident report unlocks after extraction.", "muted");
+    return true;
+  }
+  const w = window.open("", "_blank", "width=900,height=1100");
+  if (!w) {
+    term.println("[ popup blocked — allow popups for this site, then 'report' again ]", "warn");
+    return true;
+  }
+  w.document.open();
+  w.document.write(renderReportHtml(s));
+  w.document.close();
+  setTimeout(() => { try { w.focus(); w.print(); } catch {} }, 500);
+  term.println("[ incident report opened in a new tab ]", "accent");
+  term.println("  use Cmd/Ctrl+P to save as PDF (or print on paper for the team).", "muted");
+  return true;
+}
+
+function renderReportHtml(s) {
+  const m = getMission();
+  const team = (s.teamName || "(unnamed team)").toUpperCase();
+  const elapsed = elapsedString();
+  const ending = (s.ending || "extract").toUpperCase();
+  const endingDesc = {
+    EXTRACT:    "Survivor recovered. Building intact, quarantined.",
+    QUARANTINE: "Floor 4 sealed indefinitely. Survivor extracted from roof. Tower stands.",
+    PURGE:      "Thermite ignited on all floors. No survivors. Substrate eliminated.",
+  }[ending] || "—";
+  const date = new Date().toISOString().slice(0, 10);
+  const css = `
+    @page { size: A4; margin: 18mm; }
+    * { box-sizing: border-box; }
+    body { font-family: "Courier New", "IBM Plex Mono", monospace; color: #1a1a1a; background: #f4f1e8; margin: 0; padding: 30px 50px; line-height: 1.5; font-size: 13px; }
+    .page { max-width: 720px; margin: 0 auto; background: #fff; padding: 60px 70px; box-shadow: 0 0 40px rgba(0,0,0,0.15); position: relative; }
+    .page::before { content: "CONFIDENTIAL"; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-26deg); font-size: 110px; color: rgba(160,0,0,0.06); font-weight: 700; letter-spacing: 0.1em; pointer-events: none; }
+    h1 { font-size: 18px; letter-spacing: 0.3em; border-bottom: 3px double #333; padding-bottom: 10px; margin: 0 0 8px; }
+    h2 { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: #555; margin: 22px 0 6px; border-bottom: 1px solid #aaa; padding-bottom: 3px; }
+    .meta { display: grid; grid-template-columns: 130px 1fr; gap: 4px 16px; font-size: 12px; margin-bottom: 16px; }
+    .meta dt { font-weight: 700; color: #444; }
+    .meta dd { margin: 0; }
+    .stamp { display: inline-block; border: 3px solid #a00; color: #a00; padding: 4px 12px; transform: rotate(-4deg); font-weight: 700; letter-spacing: 0.16em; margin: 12px 0; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 16px; font-size: 12px; }
+    th, td { border: 1px solid #888; padding: 6px 9px; text-align: left; }
+    th { background: #ececec; }
+    .narrative { font-size: 12.5px; line-height: 1.6; }
+    .footer { margin-top: 30px; border-top: 1px solid #888; padding-top: 8px; font-size: 10px; color: #666; display: flex; justify-content: space-between; }
+    .sig { margin-top: 26px; font-size: 11px; color: #444; }
+    .sig-line { border-bottom: 1px solid #555; width: 220px; height: 30px; margin-bottom: 4px; }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .page { box-shadow: none; padding: 0; max-width: none; }
+      .page::before { color: rgba(160,0,0,0.08); }
+      .controls { display: none; }
+    }
+    .controls { position: fixed; top: 12px; right: 12px; background: #222; color: #fff; padding: 8px 14px; font-family: inherit; font-size: 11px; border: 1px solid #555; cursor: pointer; }
+  `;
+  const html = `<!doctype html>
+<html><head><meta charset="utf-8"><title>Incident Report — ${team}</title><style>${css}</style></head>
+<body>
+  <button class="controls" onclick="window.print()">▾ PRINT / SAVE AS PDF</button>
+  <div class="page">
+    <h1>PARAPLY BIOTEKNIK · INCIDENT REPORT</h1>
+    <div style="font-size:11px;color:#555;letter-spacing:0.12em;text-transform:uppercase;">remote operations / site: helix tower / floor 4</div>
+
+    <div class="stamp">${ending} — CASE CLOSED</div>
+
+    <h2>Case metadata</h2>
+    <dl class="meta">
+      <dt>Operation</dt><dd>LIFELINE</dd>
+      <dt>Site</dt><dd>Helix Tower (Paraply Bioteknik)</dd>
+      <dt>Subject</dt><dd>Dr. K. Nordlund</dd>
+      <dt>Project</dt><dd>${m.codename} (Class-IV biological trial)</dd>
+      <dt>Strain (broadcast)</dt><dd>${m.strain}</dd>
+      <dt>Operations team</dt><dd>${team}</dd>
+      <dt>Mission seed</dt><dd>${m.seed}</dd>
+      <dt>Date filed</dt><dd>${date}</dd>
+    </dl>
+
+    <h2>Outcome summary</h2>
+    <p class="narrative">Containment override authorized at T+${elapsed}. Selected protocol: <strong>${ending}</strong>. ${endingDesc}</p>
+
+    <h2>Operations metrics</h2>
+    <table>
+      <tr><th>Metric</th><th>Value</th></tr>
+      <tr><td>Final score</td><td>${s.score} / 100${state.isHardMode() ? " (hard mode)" : ""}</td></tr>
+      <tr><td>Total elapsed</td><td>${elapsed}</td></tr>
+      <tr><td>Hint tiers consumed</td><td>${s.hintsUsed}</td></tr>
+      <tr><td>Wrong submissions</td><td>${s.wrongAttempts}</td></tr>
+      <tr><td>Levels completed</td><td>${s.completed.length} / ${state.totalLevels}</td></tr>
+      <tr><td>Fragments recovered</td><td>${(s.inventory || []).join(", ") || "—"}</td></tr>
+    </table>
+
+    <h2>Sequence (per-level)</h2>
+    <ol class="narrative">
+      <li><strong>L1 — Locate Survivor.</strong> Cross-referenced sensor data with CCTV stills. Identified Dr. Nordlund in 4-12 (server room) and three hostile occupants in 4-03, 4-07, 4-15. Mechanical decoys in 4-04, 4-08, 4-09, 4-14 ruled out via direct visual.</li>
+      <li><strong>L2 — Decrypt Lab Logs.</strong> Identified four cipher families (caesar, base64, vigenère, rot13). Recovered project codename <strong>${m.codename}</strong>. Detected and ignored embedded prompt-injection attempt in log4.</li>
+      <li><strong>L3 — Door Routing.</strong> Built shortest-path agent over door graph. Filtered locked doors and hostile rooms. Drone routed via east stairwell to roof.</li>
+      <li><strong>L4 — Containment Breach.</strong> Combined codename + decoded-morse strain (${m.strain}) + room number into protocol-7 auth token. Override accepted. Protocol <strong>${ending}</strong> committed.</li>
+    </ol>
+
+    <h2>Sign-off</h2>
+    <div class="sig">
+      <div class="sig-line"></div>
+      Operator-of-record (lead, ${team})
+    </div>
+
+    <div class="footer">
+      <span>BLACKOUT // OPERATION LIFELINE</span>
+      <span>distribution: ops-lead, biosafety, internal review board</span>
+    </div>
+  </div>
+</body></html>`;
+  return html;
+}
 
 function showDebrief() {
   const s = state.get();
