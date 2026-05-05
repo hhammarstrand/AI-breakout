@@ -3,7 +3,7 @@
 
 import { Terminal, parseCommand } from "./src/terminal.js";
 import { state } from "./src/state.js";
-import { sfx, refreshAudio, startAmbient, setHeartbeat } from "./src/audio.js";
+import { sfx, refreshAudio, startAmbient, setHeartbeat, ensureAudioRunning } from "./src/audio.js";
 import { nextHint, registerHints, hintCount } from "./src/hints.js";
 import { registerPrompts, getPrompts } from "./src/prompts.js";
 import { ops } from "./src/opspanel.js";
@@ -1021,7 +1021,10 @@ async function boot() {
   refreshHUD();
   setLabel();
   ui.audioBtn.textContent = state.get().audio ? "SFX ON" : "SFX OFF";
-  ui.audioBtn.addEventListener("click", () => toggleAudio());
+  ui.audioBtn.addEventListener("click", () => {
+    ensureAudioRunning();
+    toggleAudio();
+  });
   applyReaderMode();
   if (state.isHardMode() && ui.crt) ui.crt.classList.add("hard-mode");
 
@@ -1040,7 +1043,8 @@ async function boot() {
     return;
   }
 
-  const startAudioOnce = () => {
+  const startAudioOnce = async () => {
+    await ensureAudioRunning();
     startAmbient();
     updateHeartbeat();
     document.removeEventListener("keydown", startAudioOnce);
@@ -1048,6 +1052,11 @@ async function boot() {
   };
   document.addEventListener("keydown", startAudioOnce);
   document.addEventListener("click", startAudioOnce);
+
+  // Some browsers re-suspend on tab visibility change. Re-arm on focus.
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) ensureAudioRunning();
+  });
 
   setInterval(() => { updateTimer(); updateHeartbeat(); checkOsReboot(); }, 1000);
   updateTimer();

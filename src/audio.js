@@ -12,10 +12,26 @@ function ensureCtx() {
     try { ctx = new (window.AudioContext || window.webkitAudioContext)(); }
     catch { ctx = null; }
   }
+  // Browsers can leave an AudioContext in "suspended" state until an
+  // explicit resume() inside a user gesture. Some OS/browser combos also
+  // re-suspend on tab idle. Touching the context cheaply nudges it back.
+  if (ctx && ctx.state === "suspended") {
+    ctx.resume().catch(() => {});
+  }
   return ctx;
 }
 
 function on() { return state.get().audio && ensureCtx(); }
+
+// Force-resume hook — wired into the audio toggle button + first-keystroke
+// listener so that any user gesture reliably wakes the context.
+export function ensureAudioRunning() {
+  if (!ctx) ensureCtx();
+  if (ctx && ctx.state !== "running") {
+    return ctx.resume().catch(() => {});
+  }
+  return Promise.resolve();
+}
 
 // Richer ambient: detuned drone-pad (beating sines) + filtered noise layer
 // (HVAC hiss with slow LFO on cutoff) + breathing tremolo on the drone.
