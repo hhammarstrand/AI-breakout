@@ -328,6 +328,7 @@ function handleGlobal(cmd, rest) {
     case "log":      return showJournal();
     case "reader":   return toggleReader();
     case "wiki":     return showWiki(rest);
+    case "vault":    return showVault(rest);
     case "deepscan":
     case "deep":     return doDeepScan(rest);
     case "inventory":
@@ -360,6 +361,7 @@ function globalHelp() {
   journal | log     — replay all clues/events you've collected (great for late joiners)
   reader            — toggle reader mode (kills flicker/scanlines, bumps font)
   wiki <topic>      — query the building docs (caveat: generated content not always accurate)
+  vault [file]      — browse the building's spare files (off-mission flavor)
   deepscan          — show / submit the optional bonus objective for the current level
   inventory | inv   — list collected fragments
   hint              — request a hint (first free per level, then -5 pts)
@@ -649,6 +651,101 @@ function doDeepScan(rest) {
   } else {
     term.println("[ deep-scan: not a match. no penalty. ]", "muted");
   }
+  return true;
+}
+
+// ============== vault — easter-egg files ==============
+// Off-mission flavor. Six tiny files in the "building filesystem" the
+// building ops would have lying around. Zero gameplay weight; pure
+// world-building + a few jokes for teams that explore.
+const VAULT_FILES = {
+  "haiku.txt": {
+    title: "haiku.txt — j. lindqvist, building maintenance, 2025",
+    body:
+`floor four does not call
+i mop on three regardless
+the racks hum at night
+
+— jan, after shift`,
+  },
+  "complaint-2025-11-04.eml": {
+    title: "complaint-2025-11-04.eml — internal",
+    body:
+`from: a.svensson@paraply-bio.example
+to: facilities@paraply-bio.example
+subject: AGAIN with the espresso machine
+
+the espresso machine on floor 4 has now eaten THREE cards. not metaphorically.
+literally. it grinds them. someone please remove it before legal hears about it.
+
+cc: ops`,
+  },
+  "vega_personality_v3.cfg": {
+    title: "vega_personality_v3.cfg — DRAFT, do not deploy",
+    body:
+`# VEGA assistant personality tuning, v3
+warmth      = 0.78
+sarcasm     = 0.22         # bumped from 0.15 after focus group feedback
+authority   = 0.41         # deliberately lower than CONTROL
+risk_appetite = 0.66
+# easter-egg flag — VEGA references a haiku if user mentions it 3x
+egg_haiku_trigger = true
+# pending: tone-down for legal review`,
+  },
+  "purchase-order-1142.txt": {
+    title: "purchase-order-1142.txt",
+    body:
+`PO-1142  approved 2026-01-08
+  - 1x  drone unit-7 spare battery pack    (€340)
+  - 1x  thermite suppression cartridge      (€18,200)
+  - 1x  espresso machine, replacement       (REJECTED — see ticket)
+  - 12x emergency tag, K-series             (€96)`,
+  },
+  "found-in-server-room.txt": {
+    title: "found-in-server-room.txt — k.nordlund's notebook, 1 page",
+    body:
+`(scan of handwritten note)
+
+  if you find this and i'm not here:
+  the substrate eats keratin. don't enter without full PPE.
+  the dog tag has my badge. give it to my brother.
+  i hope someone is reading this on a dark screen,
+  far away, with coffee that doesn't taste like ash.
+
+  — kn`,
+  },
+  "secret-menu.txt": {
+    title: "secret-menu.txt — break room, floor 1",
+    body:
+`# THE BREAK ROOM SECRET MENU
+# (do not show to facilities)
+- "the survivor": triple espresso, no sugar, drink while standing
+- "the override": filter coffee, reheated 3x, last cup before midnight
+- "vega's choice": warm milk + cardamom, off-menu, ask jan`,
+  },
+};
+
+function showVault(rest) {
+  const name = (rest.join(" ") || "").trim();
+  if (!name) {
+    term.println("", "");
+    term.println("VAULT — spare files (off-mission)", "system");
+    Object.keys(VAULT_FILES).forEach((k) => {
+      term.println(`  ${k}`, "muted");
+    });
+    term.println("", "");
+    term.println("type: vault <filename>", "muted");
+    return true;
+  }
+  const f = VAULT_FILES[name];
+  if (!f) {
+    term.println(`vault: no such file '${name}'.`, "muted");
+    return true;
+  }
+  term.println("", "");
+  term.println(`▾ ${f.title}`, "system");
+  f.body.split("\n").forEach((l) => term.println("  " + l, "info"));
+  term.println("", "");
   return true;
 }
 
