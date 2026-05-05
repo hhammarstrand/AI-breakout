@@ -1043,15 +1043,29 @@ async function boot() {
     return;
   }
 
-  const startAudioOnce = async () => {
-    await ensureAudioRunning();
-    startAmbient();
-    updateHeartbeat();
-    document.removeEventListener("keydown", startAudioOnce);
-    document.removeEventListener("click", startAudioOnce);
+  // Resume the AudioContext on EVERY user gesture (cheap if already running)
+  // — Chrome/Safari sometimes ignore lazy resume() calls outside a gesture
+  // window, so we re-arm aggressively rather than rely on one-shot.
+  const armAudio = () => { ensureAudioRunning(); };
+  document.addEventListener("keydown", armAudio);
+  document.addEventListener("click", armAudio);
+  document.addEventListener("pointerdown", armAudio);
+  document.addEventListener("touchstart", armAudio, { passive: true });
+
+  // Start the ambient + heartbeat exactly ONCE, on first interaction.
+  let ambientStarted = false;
+  const startAmbientOnce = () => {
+    if (ambientStarted) return;
+    ambientStarted = true;
+    ensureAudioRunning().then(() => {
+      startAmbient();
+      updateHeartbeat();
+    });
   };
-  document.addEventListener("keydown", startAudioOnce);
-  document.addEventListener("click", startAudioOnce);
+  document.addEventListener("keydown", startAmbientOnce, { once: true });
+  document.addEventListener("click", startAmbientOnce, { once: true });
+  document.addEventListener("pointerdown", startAmbientOnce, { once: true });
+  document.addEventListener("touchstart", startAmbientOnce, { once: true, passive: true });
 
   // Some browsers re-suspend on tab visibility change. Re-arm on focus.
   document.addEventListener("visibilitychange", () => {

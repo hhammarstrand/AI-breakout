@@ -25,11 +25,29 @@ function on() { return state.get().audio && ensureCtx(); }
 
 // Force-resume hook — wired into the audio toggle button + first-keystroke
 // listener so that any user gesture reliably wakes the context.
+// Also fires a silent warmup oscillator the very first time we successfully
+// resume; some browsers won't actually emit audio until the first scheduled
+// node has played, even after state === "running".
+let warmedUp = false;
 export function ensureAudioRunning() {
   if (!ctx) ensureCtx();
-  if (ctx && ctx.state !== "running") {
-    return ctx.resume().catch(() => {});
+  if (!ctx) return Promise.resolve();
+  const after = () => {
+    if (warmedUp) return;
+    if (ctx.state !== "running") return;
+    try {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      g.gain.value = 0.0001; // inaudible
+      o.connect(g); g.connect(ctx.destination);
+      o.start(); o.stop(ctx.currentTime + 0.05);
+      warmedUp = true;
+    } catch {}
+  };
+  if (ctx.state !== "running") {
+    return ctx.resume().then(after).catch(() => {});
   }
+  after();
   return Promise.resolve();
 }
 
