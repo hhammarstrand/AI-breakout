@@ -6,6 +6,11 @@ requires using AI tools (Claude / Copilot / Gemini / etc.) to solve.
 
 Pure static site: vanilla HTML/CSS/JS, no build, no dependencies.
 
+## CTF edition
+
+An AI-assisted CTF variant for 2–3 teams over Teams lives at `/ctf/`
+(source and facilitator guide: [`ctf-src/README.md`](ctf-src/README.md)).
+
 ## Run locally
 
 The site uses ES modules, which Chrome/Firefox **block over `file://`**. So
