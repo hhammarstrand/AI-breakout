@@ -2,7 +2,10 @@
 
 import { Terminal, parseCommand } from "./src/terminal.js";
 import { state, MISSIONS } from "./src/state.js";
-import { sfx, refreshAudio, startAmbient } from "./src/audio.js";
+import { sfx, cue, refreshAudio, startAmbient, unlockAudio } from "./src/audio.js";
+import { fx } from "./src/fx.js";
+import { ops } from "./src/ops.js";
+import { bms } from "./src/bms.js";
 import { open, normalize, sha256hex, receipt, slug } from "./src/crypto.js";
 import { playIntro, MISSION_TABLE } from "./src/levels/intro.js";
 import { playOutro } from "./src/levels/outro.js";
@@ -45,11 +48,15 @@ function updateTimer() {
   const m = Math.floor(totalSec / 60).toString().padStart(2, "0");
   const ss = (totalSec % 60).toString().padStart(2, "0");
   ui.timer.textContent = `${m}:${ss}`;
-  ui.crt.classList.toggle("danger", totalSec < 600);
+  if (state.get().solved.F) return;
+  ops.timer(`${m}:${ss}`);
+  const danger = totalSec < 600;
+  ui.crt.classList.toggle("danger", danger);
+  if (danger && totalSec > 0 && totalSec % 2 === 0) cue.heartbeat();
 }
 
 const ctx = {
-  term, state, sfx,
+  term, state, sfx, cue, fx, ops, bms,
   get manifest() { return manifest; },
 
   // Checks an answer against its sealed box. Returns the payload or null.
@@ -61,8 +68,7 @@ const ctx = {
       const h = await sha256hex("blackout-decoy:" + normalize(answer));
       if ((manifest.decoys[id] || []).includes(h)) {
         state.bump("decoys", id);
-        sfx.glitch();
-        term.println(decoyMsg, "danger");
+        bms.decoy(id);
         term.println(`  -${state.costs.DECOY_COST} pts on mission ${id}. The building knows you use AI.`, "warn");
         return null;
       }
@@ -70,7 +76,9 @@ const ctx = {
       if (!payload) {
         state.bump("wrong", id);
         sfx.nope();
+        fx.shake();
         term.println(`[ rejected ]  -${state.costs.WRONG_COST} pts on mission ${id}`, "danger");
+        bms.wrong();
         return null;
       }
       return payload;
@@ -80,14 +88,19 @@ const ctx = {
     }
   },
 
-  async complete(id, fragment, secret = fragment) {
+  async complete(id, fragment, secret = fragment, extra = {}) {
     const s = state.get();
     const points = state.points(id);
     const rc = await receipt(id, s.team, points, secret);
     s.solved[id] = { points, receipt: rc, at: Date.now() };
     if (fragment) s.fragments[id] = fragment;
     state.save();
-    sfx.ok();
+    cue.sting();
+    fx.flash("ok");
+    fx.burst();
+    ops.setSurvivor(s.survivorRoom);
+    ops.setFragments(s);
+    if (id !== "F") fx.banner(`MISSION ${id} // CLEARED`, `FRAGMENT ${id} ACQUIRED`, fragment);
     term.blank();
     if (fragment) term.println(`  fragment ${id}:  ${fragment}`, "accent");
     term.println(`  +${points} pts`, "accent");
@@ -97,6 +110,7 @@ const ctx = {
     if (["A", "B", "C"].every((k) => s.fragments[k]) && !s.solved.F) {
       term.println("all three fragments collected. 'mission F' to open the containment controller.", "accent");
     }
+    bms.solved(id, extra);
   },
 
   async outro(flag) {
@@ -126,6 +140,7 @@ async function enterMission(id) {
   refreshHUD();
   term.blank();
   await MOD[id].brief(ctx);
+  bms.open(id);
 }
 
 function giveHint() {
@@ -147,7 +162,8 @@ async function addFragment(token) {
     if (await open(token, manifest.fragments[id])) {
       state.get().fragments[id] = normalize(token);
       state.save();
-      sfx.ok();
+      cue.sting();
+      ops.setFragments(state.get());
       term.println(`[ fragment ${id} stored ]`, "accent");
       return;
     }
@@ -184,6 +200,7 @@ decoys    : ${MISSIONS.map((m) => `${m}:${s.decoys[m]}`).join("  ")}`,
 
 async function dispatch(line) {
   sfx.key();
+  bms.activity();
   const args = parseCommand(line);
   const cmd = (args[0] || "").toLowerCase();
   const rest = args.slice(1);
@@ -216,7 +233,8 @@ async function dispatch(line) {
     term.println(`[ operator team '${team}' registered. containment clock running. ]`, "accent");
     term.blank();
     refreshHUD();
-    return hub();
+    hub();
+    return bms.welcome(team);
   }
 
   switch (cmd) {
@@ -267,6 +285,16 @@ this is the unbuilt source tree. build and serve the game with:
 
   state.load(manifest.build);
   missionC.install(ctx);
+  ops.init();
+  ops.setSurvivor(state.get().survivorRoom);
+  ops.setFragments(state.get());
+  bms.init(ctx);
+  // The BMS notices downloads.
+  document.getElementById("terminal").addEventListener("click", (e) => {
+    const href = e.target.closest("a")?.getAttribute("href") || "";
+    if (href.includes("helix_sensors")) bms.download("A");
+    if (href.includes("aegis_lab4")) bms.download("B");
+  });
   refreshHUD();
   ui.audioBtn.textContent = state.get().audio ? "SFX ON" : "SFX OFF";
   ui.audioBtn.addEventListener("click", () => dispatch("audio"));
@@ -280,11 +308,16 @@ this is the unbuilt source tree. build and serve the game with:
   };
   document.addEventListener("keydown", startAudioOnce);
   document.addEventListener("click", startAudioOnce);
+  await fx.gate();
+  unlockAudio();
+  startAmbient();
   setInterval(updateTimer, 1000);
   updateTimer();
   term.focus();
 
   const s = state.get();
+  if (s.solved.F) { ops.makeSafe(); ops.bms("offline", "dead"); }
+  else if (["A", "B", "C"].every((k) => s.fragments[k])) ui.crt.classList.add("final-phase");
   if (!s.team) return playIntro(ctx);
   term.clear();
   term.println(`[ session restored — team ${s.team} ]`, "accent");

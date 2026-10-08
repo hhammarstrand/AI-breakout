@@ -9,14 +9,27 @@ const ART = String.raw`
   |___/|_||_||___||___|  |___||___/   |_||_| \___/ |_|  |_||___|
 `;
 
-export async function playOutro({ term, state, sfx }, flag) {
+export async function playOutro({ term, state, sfx, fx, cue, ops, bms }, flag) {
+  const crt = document.querySelector(".crt");
+  crt.classList.remove("final-phase", "danger");
+  term.setEnabled(false);
+  fx.glitch(1800);
+  cue.powerDown();
+  await bms.dying();
+  await sleep(600);
+  ops.makeSafe();
+  fx.flash("white");
+  cue.victory();
+  fx.burst("184, 255, 208", 260);
+  await fx.banner("CONTAINMENT RESTORED", "SHE IS HOME", flag, { ms: 5200 });
+  term.setEnabled(true);
   term.blank();
   term.println("[ override accepted. thermite stand-down on all floors. ]", "accent");
   await sleep(400);
   term.println("[ drone clear of the building. Dr. Nordlund: vitals stable. ]", "accent");
   await sleep(400);
   sfx.save();
-  term.printBlock(ART, "ascii");
+  term.printBlock(ART, "ascii reveal");
 
   const s = state.get();
   const sec = Math.ceil((Date.now() - (s.containmentStart || Date.now())) / 1000);

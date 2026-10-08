@@ -22,6 +22,7 @@ export const missionF = {
     if (!f.A || !f.B || !f.C) return null;
     ctx.term.println("assembling fragments...", "muted");
     views = await open(`${f.A} ${f.B} ${f.C}`, ctx.manifest.missions.F.lock);
+    if (views && !ctx.state.get().solved.F) document.querySelector(".crt").classList.add("final-phase");
     return views;
   },
 

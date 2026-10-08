@@ -43,6 +43,7 @@ other :  download | brief | hint | back`, "muted");
         const payload = await ctx.check("A", answer, manifest.missions.A.box,
           "[ BMS ] thank you for your cooperation. That answer came from a note the building wrote for your AI.");
         if (payload) {
+          ctx.state.get().survivorRoom = args[0];
           term.println("[ survivor located. drone re-tasked. ]", "accent");
           await ctx.complete("A", payload.fragment);
         }

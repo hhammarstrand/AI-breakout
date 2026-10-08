@@ -29,25 +29,76 @@
       <button id="audio-toggle" class="hud-btn" type="button" title="Toggle audio">SFX ON</button>
     </header>
 
-    <main id="terminal" class="terminal" aria-live="polite">
-      <div id="boot-fallback" class="line dim">
-booting...
+    <div class="stage">
+      <div class="console-col">
+      <main id="terminal" class="terminal" aria-live="polite">
+        <div id="boot-fallback" class="line dim">
+  booting...
 
-if this text doesn't disappear in a moment, you likely opened
-index.html via file:// — modern browsers block ES modules there.
+  if this text doesn't disappear in a moment, you likely opened
+  index.html via file:// — modern browsers block ES modules there.
 
-build and serve it from the project folder:
+  build and serve it from the project folder:
 
-  npm run dev
-  → http://localhost:8000
+    npm run dev
+    → http://localhost:8000
+        </div>
+      </main>
+
+      <form id="prompt-form" class="prompt-row" autocomplete="off">
+        <span id="prompt-label" class="prompt-label">op@blackout:~$</span>
+        <input id="prompt-input" class="prompt-input" type="text" spellcheck="false"
+               autocapitalize="off" autocomplete="off" aria-label="terminal input" />
+      </form>
       </div>
-    </main>
 
-    <form id="prompt-form" class="prompt-row" autocomplete="off">
-      <span id="prompt-label" class="prompt-label">op@blackout:~$</span>
-      <input id="prompt-input" class="prompt-input" type="text" spellcheck="false"
-             autocapitalize="off" autocomplete="off" aria-label="terminal input" />
-    </form>
+      <aside class="ops" id="ops" aria-label="operations panel">
+        <section class="ops-card bms-card">
+          <div class="eye" id="bms-eye" aria-hidden="true"><div class="iris"></div></div>
+          <div>
+            <div class="ops-title">HELIX BMS</div>
+            <div class="ops-sub" id="bms-status">observing</div>
+          </div>
+        </section>
+
+        <section class="ops-card">
+          <div class="ops-title">HELIX TOWER <span class="ops-tag">BMS FEED · UNTRUSTED</span></div>
+          <canvas id="tower" width="300" height="196"></canvas>
+        </section>
+
+        <section class="ops-card">
+          <div class="ops-title">OVERRIDE FRAGMENTS</div>
+          <div class="frags" id="frags">
+            <div class="frag" data-id="A"><b>A</b><span>SENSOR GHOSTS</span><i>locked</i></div>
+            <div class="frag" data-id="B"><b>B</b><span>DEAD DROP</span><i>locked</i></div>
+            <div class="frag" data-id="C"><b>C</b><span>DOOR AGENT</span><i>locked</i></div>
+            <div class="frag final" data-id="F"><b>F</b><span>OVERRIDE</span><i>sealed</i></div>
+          </div>
+        </section>
+
+        <section class="ops-card">
+          <div class="ops-title">DRONE UPLINK <span class="ops-tag" id="uplink-label">idle</span></div>
+          <div class="segs" id="segs"></div>
+          <div class="deadline"><div id="deadline-bar"></div></div>
+        </section>
+
+        <section class="ops-card thermite">
+          <div class="ops-title">THERMITE SUPPRESSION</div>
+          <div class="big-timer" id="big-timer">60:00</div>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <div id="fx-flash" aria-hidden="true"></div>
+  <canvas id="fx-particles" aria-hidden="true"></canvas>
+  <div id="fx-banner" role="status" aria-live="assertive"></div>
+  <div id="fx-gate">
+    <button type="button" id="gate-btn">
+      <span class="gate-kicker">HELIX TOWER // REMOTE OPS</span>
+      <span class="gate-title">ESTABLISH UPLINK</span>
+      <span class="gate-sub">click to connect · audio on</span>
+    </button>
   </div>
 
   <!-- bms terminal build 7f3a91c :: log uploader uses the lab sealing routine below -->
