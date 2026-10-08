@@ -1,73 +1,71 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="tokyo-night">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BLACKOUT // Operation Lifeline</title>
-  <style>
-    /* visible-without-JS fallback so users don't see a black screen
-       if they opened the page via file:// (modules blocked) */
-    #boot-fallback { color: #5fa97f; }
-  </style>
+  <title>BLACKOUT // HelixOS</title>
+  <style>#boot-fallback { color: #7aa2f7; }</style>
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <div class="crt">
+  <div class="crt desktop">
+    <div class="wallpaper" aria-hidden="true"></div>
     <div class="scanlines" aria-hidden="true"></div>
-    <div class="vignette" aria-hidden="true"></div>
 
-    <header class="hud">
-      <span class="hud-label">BLACKOUT</span>
-      <span class="hud-sep">|</span>
-      <span class="hud-label">TEAM <span id="hud-team">—</span></span>
-      <span class="hud-sep">|</span>
-      <span class="hud-label">PROGRESS <span id="hud-progress">0/4</span></span>
-      <span class="hud-sep">|</span>
-      <span class="hud-label">SCORE <span id="hud-score">0</span></span>
-      <span class="hud-sep">|</span>
-      <span class="hud-label">CONTAINMENT <span id="hud-timer">60:00</span></span>
-      <button id="audio-toggle" class="hud-btn" type="button" title="Toggle audio">SFX ON</button>
+    <!-- top bar -->
+    <header class="bar hud">
+      <div class="bar-left">
+        <span class="bar-logo" title="HelixOS">◆</span>
+        <nav class="workspaces" id="workspaces" aria-label="missions">
+          <button data-ws="A" type="button">1<small>A</small></button>
+          <button data-ws="B" type="button">2<small>B</small></button>
+          <button data-ws="C" type="button">3<small>C</small></button>
+          <button data-ws="F" type="button">4<small>F</small></button>
+        </nav>
+        <span class="bar-mod dim" id="bar-title">op@helix</span>
+      </div>
+      <div class="bar-center">
+        <span class="bar-clock" id="bar-clock">--:--</span>
+      </div>
+      <div class="bar-right">
+        <span class="bar-mod" title="team">⚑ <span id="hud-team">—</span></span>
+        <span class="bar-mod" title="missions solved">◈ <span id="hud-progress">0/4</span></span>
+        <span class="bar-mod" title="score">★ <span id="hud-score">0</span></span>
+        <span class="bar-mod bms-mod" id="bar-bms" title="building management system">◉ bms</span>
+        <span class="bar-mod thermite-mod" title="thermite suppression">🜂 <span id="hud-timer">60:00</span></span>
+        <button id="audio-toggle" class="bar-mod hud-btn" type="button" title="Toggle audio">SFX ON</button>
+        <button id="launcher-btn" class="bar-mod hud-btn" type="button" title="Launcher (Alt+Space / Ctrl+K)">⌘ alt+space</button>
+      </div>
     </header>
 
-    <div class="stage">
-      <div class="console-col">
-      <main id="terminal" class="terminal" aria-live="polite">
-        <div id="boot-fallback" class="line dim">
-  booting...
+    <!-- tiled windows -->
+    <div class="tiles stage">
+      <section class="win win-term console-col focused" data-title="alacritty · op@helix-ops">
+        <main id="terminal" class="terminal" aria-live="polite">
+          <div id="boot-fallback" class="line dim">booting... if this stays, build and serve with: npm run dev</div>
+        </main>
+        <form id="prompt-form" class="prompt-row" autocomplete="off">
+          <span id="prompt-label" class="prompt-label">op@blackout:~$</span>
+          <input id="prompt-input" class="prompt-input" type="text" spellcheck="false"
+                 autocapitalize="off" autocomplete="off" aria-label="terminal input" />
+        </form>
+      </section>
 
-  if this text doesn't disappear in a moment, you likely opened
-  index.html via file:// — modern browsers block ES modules there.
-
-  build and serve it from the project folder:
-
-    npm run dev
-    → http://localhost:8000
-        </div>
-      </main>
-
-      <form id="prompt-form" class="prompt-row" autocomplete="off">
-        <span id="prompt-label" class="prompt-label">op@blackout:~$</span>
-        <input id="prompt-input" class="prompt-input" type="text" spellcheck="false"
-               autocapitalize="off" autocomplete="off" aria-label="terminal input" />
-      </form>
-      </div>
-
-      <aside class="ops" id="ops" aria-label="operations panel">
-        <section class="ops-card bms-card">
-          <div class="eye" id="bms-eye" aria-hidden="true"><div class="iris"></div></div>
-          <div>
-            <div class="ops-title">HELIX BMS</div>
-            <div class="ops-sub" id="bms-status">observing</div>
+      <aside class="stack ops" id="ops" aria-label="operations">
+        <section class="win" data-title="btop · helix-tower">
+          <div class="bms-card">
+            <div class="eye" id="bms-eye" aria-hidden="true"><div class="iris"></div></div>
+            <div class="bms-meta">
+              <div class="ops-title">HELIX BMS <span class="ops-tag">pid 1</span></div>
+              <div class="ops-sub" id="bms-status">observing</div>
+              <canvas id="bms-load" width="200" height="34" aria-hidden="true"></canvas>
+            </div>
           </div>
+          <div class="ops-title tower-title">tower <span class="ops-tag">bms feed · untrusted</span></div>
+          <canvas id="tower" width="300" height="190"></canvas>
         </section>
 
-        <section class="ops-card">
-          <div class="ops-title">HELIX TOWER <span class="ops-tag">BMS FEED · UNTRUSTED</span></div>
-          <canvas id="tower" width="300" height="196"></canvas>
-        </section>
-
-        <section class="ops-card">
-          <div class="ops-title">OVERRIDE FRAGMENTS</div>
+        <section class="win" data-title="fragments">
           <div class="frags" id="frags">
             <div class="frag" data-id="A"><b>A</b><span>SENSOR GHOSTS</span><i>locked</i></div>
             <div class="frag" data-id="B"><b>B</b><span>DEAD DROP</span><i>locked</i></div>
@@ -76,29 +74,48 @@
           </div>
         </section>
 
-        <section class="ops-card">
-          <div class="ops-title">DRONE UPLINK <span class="ops-tag" id="uplink-label">idle</span></div>
+        <section class="win" data-title="uplink · drone-01">
+          <div class="ops-title">segments <span class="ops-tag" id="uplink-label">idle</span></div>
           <div class="segs" id="segs"></div>
           <div class="deadline"><div id="deadline-bar"></div></div>
         </section>
 
-        <section class="ops-card thermite">
-          <div class="ops-title">THERMITE SUPPRESSION</div>
+        <section class="win thermite" data-title="thermite.timer">
           <div class="big-timer" id="big-timer">60:00</div>
         </section>
       </aside>
     </div>
   </div>
 
+  <!-- notifications (mako-style) -->
+  <div id="toasts" aria-live="polite"></div>
+
+  <!-- launcher (walker-style) -->
+  <div id="launcher" class="hidden" role="dialog" aria-label="launcher">
+    <div class="launcher-box">
+      <input id="launcher-input" type="text" placeholder="run…  (mission, hint, theme, start, receipts…)" autocomplete="off" spellcheck="false" />
+      <ul id="launcher-list"></ul>
+      <div class="launcher-foot">↑↓ select · enter run · esc close · alt+1…4 missions · alt+t theme</div>
+    </div>
+  </div>
+
+  <!-- fx -->
   <div id="fx-flash" aria-hidden="true"></div>
   <canvas id="fx-particles" aria-hidden="true"></canvas>
   <div id="fx-banner" role="status" aria-live="assertive"></div>
-  <div id="fx-gate">
-    <button type="button" id="gate-btn">
-      <span class="gate-kicker">HELIX TOWER // REMOTE OPS</span>
-      <span class="gate-title">ESTABLISH UPLINK</span>
-      <span class="gate-sub">click to connect · audio on</span>
-    </button>
+
+  <!-- lock screen (hyprlock-style) -->
+  <div id="fx-gate" class="lock">
+    <canvas id="lock-rain" aria-hidden="true"></canvas>
+    <div class="lock-inner">
+      <div class="lock-time" id="lock-time">--:--</div>
+      <div class="lock-date" id="lock-date"></div>
+      <form id="lock-form" autocomplete="off">
+        <input id="lock-input" type="text" spellcheck="false" maxlength="24" placeholder="team name" aria-label="team name" />
+      </form>
+      <div class="lock-hint" id="lock-hint">HELIX OPS // authenticate to establish uplink · audio on</div>
+      <button type="button" id="gate-btn" class="lock-btn">establish uplink ↵</button>
+    </div>
   </div>
 
   <!-- bms terminal build 7f3a91c :: log uploader uses the lab sealing routine below -->

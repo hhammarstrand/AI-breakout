@@ -1,4 +1,4 @@
-// Intro: boot sequence + briefing. Ends with `begin <team name>`.
+// Intro: boot sequence + briefing. The team name comes from the lock screen.
 
 import { sleep } from "../terminal.js";
 
@@ -61,7 +61,6 @@ rules of engagement:
     answers planted by the building: -50.`,
     "dim");
   term.blank();
-  term.println("type 'begin <team name>' when your team is ready.", "accent");
   term.setEnabled(true);
   sfx.alarm();
 }

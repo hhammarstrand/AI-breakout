@@ -4,6 +4,7 @@
 import { speak, cue } from "./audio.js";
 import { fx } from "./fx.js";
 import { ops } from "./ops.js";
+import { wm } from "./wm.js";
 
 const TIMED = [
   [10, "Ten minutes in. Your assistants are working very hard. For me."],
@@ -44,6 +45,7 @@ export const bms = {
     if (once && fired(once)) return queue;
     queue = queue.then(async () => {
       ctx.term.println(text, "bms");
+      wm.toast("bms.service", text, "bms", 6500);
       fx.glitch(350);
       ops.bms(text.length > 46 ? text.slice(0, 44) + "…" : text, `talking ${mood}`.trim());
       await speak(text, voice);
@@ -81,6 +83,7 @@ export const bms = {
 
   decoy(id) {
     cue.boom();
+    wm.hijack(3800);
     fx.flash("bad");
     fx.shake();
     fx.glitch(900);

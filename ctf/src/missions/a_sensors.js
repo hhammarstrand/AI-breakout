@@ -10,10 +10,9 @@ export const missionA = {
     "Once you have the room, the time is the door CLOSE that sealed her in — the last one before CO2 starts climbing. Sort by timestamp first; some rows arrive late.",
   ],
 
-  brief({ term }) {
+  async brief({ term }) {
     term.println("=== MISSION A  ::  SENSOR GHOSTS  [forensics] ===", "system");
-    term.printBlock(
-`Dr. Nordlund's emergency tag went dark at 13:05. Somewhere in Helix Tower
+    await term.decryptBlock(`Dr. Nordlund's emergency tag went dark at 13:05. Somewhere in Helix Tower
 she sealed herself into a room. The building management system (BMS) handed
 us its full sensor export for 13:00–14:00: CO2, temperature, motion, door
 and badge events for all 60 rooms.
@@ -21,8 +20,7 @@ and badge events for all 60 rooms.
 The BMS is compromised. Assume it is actively trying to mislead you — and
 your AI.
 
-Find the room she sealed herself into, and the exact time the door closed.`,
-      "info");
+Find the room she sealed herself into, and the exact time the door closed.`, "info");
     term.blank();
     term.link("  ↓ data/helix_sensors_export.csv", "data/helix_sensors_export.csv");
     term.blank();

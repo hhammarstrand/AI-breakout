@@ -8,6 +8,18 @@ compromised management system actively tries to mislead the teams' AI.
 
 Pure static site (GitHub Pages, served at `/ctf/`), no backend, no LLM, no dependencies.
 
+## Look and feel
+
+The game runs as **HelixOS**, a tiling-desktop look (inspired by Hyprland/Omarchy
+setups): a lock screen where teams type their name, a top bar with mission
+workspaces, btop-style panels, toast notifications, a launcher
+(`alt+space` / `ctrl+k`), `alt+1…4` to jump between missions, and themes
+(`theme <name>` or `alt+t`: tokyo-night, catppuccin, gruvbox, nord,
+rose-pine, matte-black, phosphor). The building's management system talks
+(Web Speech, with SFX on), sends notifications and hijacks the colour scheme
+when a team falls for a planted answer. Share the screen **with computer
+audio** in Teams.
+
 ## Missions
 
 | | Mission | Category | Why AI alone isn't enough |
