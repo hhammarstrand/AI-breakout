@@ -40,6 +40,20 @@ export class Terminal {
     this.#scroll();
   }
 
+  // A line containing a clickable link (downloads, files).
+  link(label, href, cls = "") {
+    const div = document.createElement("div");
+    div.className = "line" + (cls ? " " + cls : "");
+    const a = document.createElement("a");
+    a.href = href;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.textContent = label;
+    div.appendChild(a);
+    this.root.appendChild(div);
+    this.#scroll();
+  }
+
   // Multi-line block, instant.
   printBlock(text, cls = "") {
     text.split("\n").forEach((l) => this.println(l, cls));

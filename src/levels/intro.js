@@ -1,4 +1,4 @@
-// Intro: boot sequence + briefing.
+// Intro: boot sequence + briefing. Ends with `begin <team name>`.
 
 import { sleep } from "../terminal.js";
 
@@ -9,90 +9,56 @@ const LOGO = String.raw`
 / /_/ / /___/ ___ / /___/ /| |/ /_/ / /_/ / / /
 /_____/_____/_/  |_\____/_/ |_|\____/\____/ /_/
 
-   Lifeline Protocol  ::  v0.9.4-rc
+   Lifeline Protocol  ::  CTF edition
 `;
 
-export const intro = {
-  state: "boot",
-  async start(ctx) {
-    const { term, state, sfx } = ctx;
-    term.clear();
-    term.setEnabled(false);
+export const MISSION_TABLE =
+`  A  SENSOR GHOSTS   forensics           find the survivor in 23k rows of sensor data
+  B  DEAD DROP       crypto / reversing  recover the real override fragment
+  C  DOOR AGENT      programming         route a drone through 10 rounds, 8 s each
+  F  OVERRIDE        teamwork            needs fragments A + B + C`;
 
-    const bootLines = [
-      "[ 0.000ms] BIOS init",
-      "[ 0.041ms] mounting /dev/ssd0 ... ok",
-      "[ 0.092ms] checking parity ......... ok",
-      "[ 0.144ms] establishing tunnel to helix-tower-bms ... ",
-      "          waiting for reverse-proxy ack ...",
-      "          ack received [latency 412ms]",
-      "[ 0.612ms] handshake ... ok",
-      "[ 0.713ms] loading mission profile: OP-LIFELINE",
-    ];
-    for (const l of bootLines) {
-      await term.type(l, "boot", 6);
-      await sleep(70);
-    }
-    await sleep(220);
-    term.printBlock(LOGO, "ascii");
-    await sleep(300);
+export async function playIntro({ term, sfx }) {
+  term.clear();
+  term.setEnabled(false);
+  const bootLines = [
+    "[ 0.000ms] BIOS init",
+    "[ 0.041ms] mounting /dev/ssd0 ... ok",
+    "[ 0.144ms] establishing tunnel to helix-tower-bms ... ",
+    "          ack received [latency 412ms]",
+    "[ 0.713ms] loading mission profile: OP-LIFELINE",
+  ];
+  for (const l of bootLines) { await term.type(l, "boot", 4); await sleep(60); }
+  term.printBlock(LOGO, "ascii");
 
-    const briefing = [
-      "",
-      "[ 14:02:11 ] INCOMING TRANSMISSION FROM OPS LEAD",
-      "",
-      "  > Helix Tower is dark. We lost contact 41 minutes ago.",
-      "  > Aegis BioSystems was running a Class-IV trial on floor 4.",
-      "  > Building autonomic systems are still online but acting strange.",
-      "  > One survivor confirmed via emergency tag — name: DR. K. NORDLUND.",
-      "  > She is somewhere inside. We don't know where. We don't know what",
-      "    else is in there with her.",
-      "",
-      "  > In 60 minutes the lab's containment will fail and the entire",
-      "    structure will be sterilized by thermite suppression.",
-      "  > You are her only way out. You will operate remote.",
-      "",
-      "  > Use AI. Use everything. Just bring her home.",
-      "",
-      "  > End of transmission.",
-      "",
-    ];
-    for (const l of briefing) {
-      await term.type(l, l.startsWith("  >") ? "info" : "system", 8);
-    }
+  const briefing = [
+    "[ 14:02:11 ] INCOMING TRANSMISSION FROM OPS LEAD",
+    "",
+    "  > Helix Tower is dark. Aegis BioSystems was running a Class-IV trial on floor 4.",
+    "  > The building's management system (BMS) is still online — and it is not on our side.",
+    "  > One survivor: DR. K. NORDLUND. Somewhere inside.",
+    "  > In 60 minutes containment fails and the structure is sterilized.",
+    "",
+    "  > Use AI. Use everything. But verify — the building lies, and it knows you use AI.",
+    "",
+  ];
+  for (const l of briefing) await term.type(l, l.startsWith("  >") ? "info" : "system", 5);
 
-    term.println("", "");
-    term.printBlock(
-`primary objectives:
-  L1  locate survivor                    — read sensors and CCTV, deduce position
-  L2  decrypt lab logs                   — recover what aegis was running
-  L3  build a door-routing agent         — clear a path through the building
-  L4  override containment               — auth code, then extract`,
-      "dim"
-    );
-    term.println("", "");
-    term.printBlock(
-`available commands at any time:
-  help        status        inventory     hint
-  clear       audio         brief         begin`,
-      "muted"
-    );
-    term.println("", "");
-    term.println("type 'begin' when your team is ready.", "accent");
-    term.setEnabled(true);
-    state.startContainment();
-    sfx.alarm();
-  },
+  term.printBlock(
+`missions (any order — split your team):
+${MISSION_TABLE}
 
-  onCommand(cmd, args, raw, ctx) {
-    const { term, sfx } = ctx;
-    if (cmd === "begin") {
-      sfx.save();
-      term.println("[ tunnel locked. routing to L1. ]", "accent");
-      ctx.go(1);
-      return;
-    }
-    if (cmd === "brief") return this.start(ctx);
-    term.println("type 'begin' to start the operation.", "muted");
-  },
-};
+rules of engagement:
+  - every answer is checked cryptographically. reading the page source is
+    allowed, and won't hand you the answers.
+  - out of scope: the game's GitHub repository and the facilitator.
+  - each solve prints a RECEIPT. paste it in the Teams chat — the chat
+    timestamp is your time on the scoreboard.
+  - first hint per mission is free, then -25. wrong answers -10.
+    answers planted by the building: -50.`,
+    "dim");
+  term.blank();
+  term.println("type 'begin <team name>' when your team is ready.", "accent");
+  term.setEnabled(true);
+  sfx.alarm();
+}

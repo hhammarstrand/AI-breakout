@@ -124,6 +124,8 @@ html, body {
 .line.echo { color: var(--fg-dim); }
 .line.echo::before { content: "› "; color: var(--fg-muted); }
 .line.system { color: var(--accent); letter-spacing: 0.05em; }
+.line a { color: var(--accent); text-decoration: underline; }
+.line a:hover { color: var(--fg); }
 .line.ascii { color: var(--accent); }
 
 .line.glitch {

@@ -1,4 +1,7 @@
-name: Deploy static site to Pages
+name: Build and deploy to Pages
+
+# Puzzles are generated from the BLACKOUT_SEED repository secret at build
+# time; only sealed (encrypted) data is published. Logs never print answers.
 
 on:
   push:
@@ -24,13 +27,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build and self-test (solvable, nothing leaked)
+        env:
+          BLACKOUT_SEED: ${{ secrets.BLACKOUT_SEED }}
+        run: |
+          if [ -z "$BLACKOUT_SEED" ]; then
+            echo "::error::Repository secret BLACKOUT_SEED is not set (Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+          node tools/selftest.mjs
+          rm -rf facilitator
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "."
+          path: "dist"
 
       - name: Deploy
         id: deployment

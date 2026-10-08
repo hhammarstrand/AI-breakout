@@ -1,67 +1,67 @@
-// Game state: persisted in localStorage. Tracks score, progress, inventory.
+// Game state, persisted in localStorage. Nothing here is a secret: answers
+// are never stored client-side, only the fragments a team already earned.
+// Editing it only lies to yourself — receipts are verified by the facilitator.
 
-const KEY = "blackout.v1";
-const TOTAL_LEVELS = 4;
+const KEY = "blackout.v2";
+export const MISSIONS = ["A", "B", "C", "F"];
+const BASE_POINTS = 250;
+const HINT_COST = 25;
+const WRONG_COST = 10;
+const DECOY_COST = 50;
+const MIN_POINTS = 50;
+
+const zero = () => Object.fromEntries(MISSIONS.map((m) => [m, 0]));
 
 const initial = () => ({
-  level: 0,            // 0 = intro, 1..4 = levels, 5 = outro
-  completed: [],       // levels completed (1..4)
-  score: 0,
-  hintsUsed: 0,
-  wrongAttempts: 0,
-  inventory: [],       // strings: "FRAG-A:K9", "FLOOR-4-ROUTE", etc
-  startedAt: null,     // ms epoch
-  containmentStart: null, // ms epoch — when 60-min timer started
+  build: null,
+  team: null,
+  mission: null,         // active mission id, null = hub
+  containmentStart: null,
   audio: true,
+  solved: {},            // id -> { points, receipt, at }
+  fragments: {},         // "A" | "B" | "C" -> token
+  hints: zero(),
+  wrong: zero(),
+  decoys: zero(),
 });
 
-let cache = null;
+let cache = initial();
 
 export const state = {
-  load() {
+  load(build) {
     try {
       const raw = localStorage.getItem(KEY);
       cache = raw ? { ...initial(), ...JSON.parse(raw) } : initial();
     } catch {
       cache = initial();
     }
+    if (cache.build !== build) cache = { ...initial(), build, audio: cache.audio };
+    this.save();
     return cache;
   },
   save() {
     try { localStorage.setItem(KEY, JSON.stringify(cache)); } catch {}
   },
   reset() {
-    cache = initial();
+    cache = { ...initial(), build: cache.build };
     this.save();
   },
   get() { return cache; },
 
-  addScore(n) { cache.score = Math.max(0, cache.score + n); this.save(); },
-  addItem(item) {
-    if (!cache.inventory.includes(item)) cache.inventory.push(item);
-    this.save();
-  },
-  hasItem(item) { return cache.inventory.includes(item); },
+  bump(kind, id) { cache[kind][id] += 1; this.save(); },
 
-  completeLevel(n) {
-    if (!cache.completed.includes(n)) {
-      cache.completed.push(n);
-      cache.completed.sort();
-    }
-    cache.level = Math.max(cache.level, n + 1);
-    this.save();
+  points(id) {
+    const paidHints = Math.max(0, cache.hints[id] - 1);
+    const wrong = id === "C" ? 0 : cache.wrong[id];
+    return Math.max(MIN_POINTS, BASE_POINTS - HINT_COST * paidHints - WRONG_COST * wrong - DECOY_COST * cache.decoys[id]);
   },
 
-  setLevel(n) { cache.level = n; this.save(); },
-
-  totalLevels: TOTAL_LEVELS,
-
-  startContainment() {
-    if (!cache.containmentStart) {
-      cache.containmentStart = Date.now();
-      this.save();
-    }
+  score() {
+    return Object.values(cache.solved).reduce((a, s) => a + s.points, 0);
   },
+
+  costs: { HINT_COST, WRONG_COST, DECOY_COST },
+
   containmentRemainingMs(durationMs = 60 * 60 * 1000) {
     if (!cache.containmentStart) return durationMs;
     return Math.max(0, durationMs - (Date.now() - cache.containmentStart));
