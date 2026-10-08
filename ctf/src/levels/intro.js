@@ -18,7 +18,7 @@ export const MISSION_TABLE =
   C  DOOR AGENT      programming         route a drone through 10 rounds, 8 s each
   F  OVERRIDE        teamwork            needs fragments A + B + C`;
 
-export async function playIntro({ term, sfx }) {
+export async function playIntro({ term, sfx, fx, cue }) {
   term.clear();
   term.setEnabled(false);
   const bootLines = [
@@ -29,7 +29,10 @@ export async function playIntro({ term, sfx }) {
     "[ 0.713ms] loading mission profile: OP-LIFELINE",
   ];
   for (const l of bootLines) { await term.type(l, "boot", 4); await sleep(60); }
-  term.printBlock(LOGO, "ascii");
+  cue.whoosh();
+  fx.glitch(800);
+  fx.flash("ok");
+  term.printBlock(LOGO, "ascii reveal");
 
   const briefing = [
     "[ 14:02:11 ] INCOMING TRANSMISSION FROM OPS LEAD",

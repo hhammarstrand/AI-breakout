@@ -71,7 +71,7 @@ back. No human can route that fast. Build an agent that can.`,
 
   start(ctx) {
     this.stop();
-    run = { round: 1, scenario: ctx.manifest.missions.C.first };
+    run = { round: 1, scenario: ctx.manifest.missions.C.first, t0: Date.now() };
     this.arm(ctx);
     return structuredClone(run.scenario);
   },
@@ -80,9 +80,12 @@ back. No human can route that fast. Build an agent that can.`,
     const { term } = ctx;
     const sc = run.scenario;
     run.deadline = Date.now() + DEADLINE_MS;
+    ctx.ops.uplinkStart(sc.round, DEADLINE_MS);
     run.timer = setTimeout(() => {
       term.println(`[ round ${sc.round}: uplink timeout — drone lost. 'start' to retry. ]`, "danger");
       ctx.sfx.nope();
+      ctx.ops.uplinkFail(sc.round);
+      ctx.bms.doorsFail();
       run = null;
     }, DEADLINE_MS);
     term.println(
@@ -106,18 +109,24 @@ back. No human can route that fast. Build an agent that can.`,
     if (!payload) {
       sfx.nope();
       term.println(`[ round ${r}: route rejected — drone lost. chain reset. ]`, "danger");
+      ctx.ops.uplinkFail(r);
+      ctx.fx.shake();
+      ctx.bms.doorsFail();
       run = null;
       return { ok: false, done: false, round: r, message: "wrong route — chain reset, call start()" };
     }
-    sfx.ok();
+    ctx.cue.segment(r);
+    ctx.ops.uplinkOk(r);
     term.println(`[ round ${r}: route confirmed ]`, "accent");
     if (r === ROUNDS) {
+      const ms = Date.now() - run.t0;
       run = null;
+      ctx.ops.uplinkDone();
       term.println("[ drone has reached the survivor's floor. ]", "accent");
-      await ctx.complete("C", payload.fragment);
+      await ctx.complete("C", payload.fragment, payload.fragment, { ms });
       return { ok: true, done: true, round: r, message: "all rounds cleared" };
     }
-    run = { round: r + 1, scenario: payload };
+    run = { round: r + 1, scenario: payload, t0: run.t0 };
     this.arm(ctx);
     return { ok: true, done: false, round: r + 1, message: "next round", scenario: structuredClone(payload) };
   },

@@ -108,3 +108,71 @@ function tone(freq, ms) {
 }
 
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+// ---------- cinematic cues ----------
+
+export function unlockAudio() {
+  const c = ensureCtx();
+  if (c && c.state === "suspended") c.resume();
+}
+
+function noiseBurst(dur = 0.6, gain = 0.25, lp = 900) {
+  if (!on()) return;
+  const len = Math.floor(ctx.sampleRate * dur);
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len) ** 2;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const f = ctx.createBiquadFilter();
+  f.type = "lowpass";
+  f.frequency.value = lp;
+  const g = ctx.createGain();
+  g.gain.value = gain;
+  src.connect(f); f.connect(g); g.connect(ctx.destination);
+  src.start();
+}
+
+function sweep(from, to, dur, type = "sawtooth", gain = 0.05) {
+  if (!on()) return;
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(from, ctx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(to, ctx.currentTime + dur);
+  g.gain.setValueAtTime(gain, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+  o.connect(g); g.connect(ctx.destination);
+  o.start(); o.stop(ctx.currentTime + dur);
+}
+
+export const cue = {
+  // triumphant rising arpeggio
+  sting() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => blip(f, 0.22, "triangle", 0.06), i * 90)); },
+  // low impact for decoys and alarms
+  boom() { noiseBurst(0.9, 0.35, 420); sweep(140, 38, 0.8, "sine", 0.12); },
+  whoosh() { noiseBurst(0.5, 0.12, 2400); },
+  heartbeat() { blip(58, 0.12, "sine", 0.16); setTimeout(() => blip(52, 0.16, "sine", 0.12), 170); },
+  segment(i) { blip(600 + i * 80, 0.05, "square", 0.04); },
+  powerDown() { sweep(440, 30, 2.4, "sawtooth", 0.07); },
+  victory() { [392, 523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => blip(f, 0.5, "triangle", 0.05), i * 140)); },
+};
+
+// The building's voice (Web Speech API). Silent when SFX is off or unsupported.
+export function speak(text, { rate = 0.92, pitch = 0.35 } = {}) {
+  return new Promise((resolve) => {
+    try {
+      if (!state.get().audio || !("speechSynthesis" in window)) return resolve();
+      const u = new SpeechSynthesisUtterance(text);
+      const voices = speechSynthesis.getVoices().filter((v) => v.lang.startsWith("en"));
+      u.voice = voices.find((v) => /Daniel|Google UK English Male|Alex|Fred/i.test(v.name)) || voices[0] || null;
+      u.rate = rate;
+      u.pitch = pitch;
+      u.volume = 0.9;
+      u.onend = u.onerror = () => resolve();
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+      setTimeout(resolve, Math.min(12000, 800 + (text.length * 70) / rate));
+    } catch { resolve(); }
+  });
+}
