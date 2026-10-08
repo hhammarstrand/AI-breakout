@@ -9,15 +9,6 @@ const calm = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 let bannerTimer = null;
 
 export const fx = {
-  // Click-to-connect overlay. Browsers need a gesture before audio/speech.
-  gate() {
-    return new Promise((resolve) => {
-      const g = $("fx-gate");
-      $("gate-btn").addEventListener("click", () => { g.classList.add("hidden"); resolve(); }, { once: true });
-    });
-  },
-  hideGate() { $("fx-gate").classList.add("hidden"); },
-
   flash(kind = "ok") {
     const el = $("fx-flash");
     el.className = "";

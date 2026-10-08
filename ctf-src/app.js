@@ -6,6 +6,7 @@ import { sfx, cue, refreshAudio, startAmbient, unlockAudio } from "./src/audio.j
 import { fx } from "./src/fx.js";
 import { ops } from "./src/ops.js";
 import { bms } from "./src/bms.js";
+import { wm, THEMES } from "./src/wm.js";
 import { open, normalize, sha256hex, receipt, slug } from "./src/crypto.js";
 import { playIntro, MISSION_TABLE } from "./src/levels/intro.js";
 import { playOutro } from "./src/levels/outro.js";
@@ -47,8 +48,8 @@ function updateTimer() {
   const totalSec = Math.ceil(state.containmentRemainingMs() / 1000);
   const m = Math.floor(totalSec / 60).toString().padStart(2, "0");
   const ss = (totalSec % 60).toString().padStart(2, "0");
+  if (state.get().solved.F) { ui.timer.textContent = "safe"; return; }
   ui.timer.textContent = `${m}:${ss}`;
-  if (state.get().solved.F) return;
   ops.timer(`${m}:${ss}`);
   const danger = totalSec < 600;
   ui.crt.classList.toggle("danger", danger);
@@ -100,6 +101,8 @@ const ctx = {
     fx.burst();
     ops.setSurvivor(s.survivorRoom);
     ops.setFragments(s);
+    wm.setWorkspace(s.mission, s);
+    wm.toast(`mission ${id}`, `${fragment ? `fragment ${fragment} · ` : ""}+${points} pts`, "ok");
     if (id !== "F") fx.banner(`MISSION ${id} // CLEARED`, `FRAGMENT ${id} ACQUIRED`, fragment);
     term.blank();
     if (fragment) term.println(`  fragment ${id}:  ${fragment}`, "accent");
@@ -123,6 +126,7 @@ const ctx = {
 
 function hub() {
   const s = state.get();
+  wm.setWorkspace(null, s);
   term.println(`team ${s.team} — mission board`, "system");
   const lines = MISSION_TABLE.split("\n").map((l) => {
     const id = l.trim()[0];
@@ -138,6 +142,7 @@ async function enterMission(id) {
   state.get().mission = id;
   state.save();
   refreshHUD();
+  wm.setWorkspace(id, state.get());
   term.blank();
   await MOD[id].brief(ctx);
   bms.open(id);
@@ -164,6 +169,7 @@ async function addFragment(token) {
       state.save();
       cue.sting();
       ops.setFragments(state.get());
+      wm.setWorkspace(state.get().mission, state.get());
       term.println(`[ fragment ${id} stored ]`, "accent");
       return;
     }
@@ -181,7 +187,10 @@ function globalHelp() {
   fragment <token>    add a fragment a teammate found on another machine
   fragments           list collected fragments
   receipts            list your receipts (for the Teams chat)
-  status | clear | audio | reset --confirm`,
+  theme [name]        switch theme (alt+t cycles)      fastfetch
+  status | clear | audio | reset --confirm
+
+keys: alt+space / ctrl+k launcher · alt+1…4 missions A B C F · alt+t theme`,
     "dim");
 }
 
@@ -222,19 +231,18 @@ async function dispatch(line) {
       return setTimeout(() => location.reload(), 500);
   }
 
+  if (cmd === "theme") {
+    if (!rest[0]) return term.println(`themes: ${THEMES.join("  ")}   (current: ${wm.theme}) — 'theme <name>' or alt+t`, "dim");
+    if (!wm.setTheme(rest[0].toLowerCase())) term.println(`unknown theme. try: ${THEMES.join(", ")}`, "warn");
+    return;
+  }
+  if (cmd === "fastfetch" || cmd === "neofetch") return fastfetch();
+
   if (!s.team) {
     if (cmd !== "begin") return term.println("type 'begin <team name>' to start.", "muted");
     const team = rest.join(" ").trim();
     if (!team) return term.println("usage: begin <team name>", "muted");
-    s.team = team;
-    s.containmentStart = s.containmentStart || Date.now();
-    state.save();
-    sfx.save();
-    term.println(`[ operator team '${team}' registered. containment clock running. ]`, "accent");
-    term.blank();
-    refreshHUD();
-    hub();
-    return bms.welcome(team);
+    return registerTeam(team);
   }
 
   switch (cmd) {
@@ -268,6 +276,43 @@ async function dispatch(line) {
   term.println(`unknown command: ${cmd} — type 'help'`, "warn");
 }
 
+async function registerTeam(team) {
+  const s = state.get();
+  s.team = team;
+  s.containmentStart = s.containmentStart || Date.now();
+  state.save();
+  sfx.save();
+  term.println(`[ operator team '${team}' authenticated. containment clock running. ]`, "accent");
+  term.blank();
+  refreshHUD();
+  fastfetch();
+  term.blank();
+  hub();
+  wm.toast("helix-ops", `uplink established · team ${team}`, "ok");
+  return bms.welcome(team);
+}
+
+function fastfetch() {
+  const s = state.get();
+  const up = s.containmentStart ? Math.floor((Date.now() - s.containmentStart) / 60000) : 0;
+  const left = Math.ceil(state.containmentRemainingMs() / 60000);
+  wm.fastfetch(term, {
+    user: slug(s.team || "operator"),
+    lines: [
+      ["OS", "HelixOS 31.03 (lifeline) x86_64"],
+      ["Host", "helix-tower-bms (compromised)"],
+      ["Kernel", "6.6.6-bms-hardened"],
+      ["Uptime", `${up} mins`],
+      ["Shell", "opsh 2.1"],
+      ["WM", "hyperion (tiling)"],
+      ["Theme", wm.theme],
+      ["Missions", `${Object.keys(s.solved).length}/4 solved · ${state.score()} pts`],
+      ["Fragments", ["A", "B", "C"].map((k) => (s.fragments[k] ? k : "·")).join(" ")],
+      ["Thermite", s.solved.F ? "disarmed" : `${left} min to ignition`],
+    ],
+  });
+}
+
 async function boot() {
   try {
     const res = await fetch("data/manifest.json", { cache: "no-store" });
@@ -299,7 +344,12 @@ this is the unbuilt source tree. build and serve the game with:
   ui.audioBtn.textContent = state.get().audio ? "SFX ON" : "SFX OFF";
   ui.audioBtn.addEventListener("click", () => dispatch("audio"));
   document.getElementById("prompt-form").addEventListener("submit", (e) => e.preventDefault());
-  term.setHandler((line) => { dispatch(line).catch((e) => term.println(`[error] ${e.message}`, "danger")); });
+  const runLine = (line) => { dispatch(line).catch((e) => term.println(`[error] ${e.message}`, "danger")); };
+  term.setHandler(runLine);
+  wm.init((line, { echo } = {}) => { if (echo) term.echo(line); runLine(line); });
+  wm.setWorkspace(state.get().mission, state.get());
+  wm.tick(state);
+  setInterval(() => wm.tick(state), 1000);
 
   const startAudioOnce = () => {
     startAmbient();
@@ -308,7 +358,7 @@ this is the unbuilt source tree. build and serve the game with:
   };
   document.addEventListener("keydown", startAudioOnce);
   document.addEventListener("click", startAudioOnce);
-  await fx.gate();
+  const lockName = await wm.lock(state.get().team);
   unlockAudio();
   startAmbient();
   setInterval(updateTimer, 1000);
@@ -318,9 +368,13 @@ this is the unbuilt source tree. build and serve the game with:
   const s = state.get();
   if (s.solved.F) { ops.makeSafe(); ops.bms("offline", "dead"); }
   else if (["A", "B", "C"].every((k) => s.fragments[k])) ui.crt.classList.add("final-phase");
-  if (!s.team) return playIntro(ctx);
+  if (!s.team) {
+    await playIntro(ctx);
+    return registerTeam(lockName);
+  }
   term.clear();
   term.println(`[ session restored — team ${s.team} ]`, "accent");
+  fastfetch();
   term.blank();
   if (s.mission) return enterMission(s.mission);
   hub();

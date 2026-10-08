@@ -53,15 +53,13 @@ export const missionC = {
     window.BLACKOUT = Object.assign(window.BLACKOUT || {}, { doors: api });
   },
 
-  brief({ term }) {
+  async brief({ term }) {
     term.println("=== MISSION C  ::  DOOR AGENT  [programming] ===", "system");
-    term.printBlock(
-`The drone must cross the building to reach the survivor. The BMS is
+    await term.decryptBlock(`The drone must cross the building to reach the survivor. The BMS is
 cycling doors on schedules and maintenance units have taken some rooms.
 
 Our uplink only holds for ${DEADLINE_MS / 1000} seconds per segment. Ten segments, back to
-back. No human can route that fast. Build an agent that can.`,
-      "info");
+back. No human can route that fast. Build an agent that can.`, "info");
     term.blank();
     term.printBlock(SPEC, "muted");
     term.blank();

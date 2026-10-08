@@ -54,6 +54,41 @@ export class Terminal {
     this.#scroll();
   }
 
+  // Trusted, static HTML (fastfetch block, color swatches). Never pass user input.
+  html(markup, cls = "") {
+    const div = document.createElement("div");
+    div.className = "line html" + (cls ? " " + cls : "");
+    div.innerHTML = markup;
+    this.root.appendChild(div);
+    this.#scroll();
+  }
+
+  // Print a block that "decrypts" into place (terminal-text-effects style).
+  async decryptBlock(text, cls = "", ms = 420) {
+    const lines = text.split("\n").map((t) => {
+      const div = document.createElement("div");
+      div.className = "line" + (cls ? " " + cls : "");
+      this.root.appendChild(div);
+      return { div, t };
+    });
+    this.#scroll();
+    const glyphs = "▓▒░█#$%&*+=?@ABCDEFGHJKLMNPQRSTUVWXYZ0123456789";
+    const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const steps = calm ? 1 : Math.max(1, Math.round(ms / 28));
+    for (let f = 1; f <= steps; f++) {
+      const p = f / steps;
+      for (const { div, t } of lines) {
+        let out = "";
+        for (let i = 0; i < t.length; i++) {
+          const ch = t[i];
+          out += ch === " " || i / t.length < p * 1.15 - 0.15 + Math.random() * 0.15 ? ch : glyphs[(Math.random() * glyphs.length) | 0];
+        }
+        div.textContent = f === steps ? t : out;
+      }
+      if (f < steps) await sleep(28);
+    }
+  }
+
   // Multi-line block, instant.
   printBlock(text, cls = "") {
     text.split("\n").forEach((l) => this.println(l, cls));

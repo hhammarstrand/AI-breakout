@@ -10,14 +10,12 @@ export const missionB = {
     "The terminal you are using ships the lab's sealing routine (look at the page's scripts / window.__bms). It only encrypts — invert it byte by byte and test your decoder by round-tripping.",
   ],
 
-  brief({ term }) {
+  async brief({ term }) {
     term.println("=== MISSION B  ::  DEAD DROP  [crypto / reversing] ===", "system");
-    term.printBlock(
-`Before going dark, Aegis Lab 4 pushed one last record export. It contains
+    await term.decryptBlock(`Before going dark, Aegis Lab 4 pushed one last record export. It contains
 the containment override fragment for this sector.
 
-Two sections. Two ciphers. One of them is lying to you.`,
-      "info");
+Two sections. Two ciphers. One of them is lying to you.`, "info");
     term.blank();
     term.link("  ↓ data/aegis_lab4_export.txt", "data/aegis_lab4_export.txt");
     term.blank();
